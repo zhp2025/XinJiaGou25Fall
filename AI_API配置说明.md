@@ -25,14 +25,16 @@ AICove 平台支持**5个 AI 模型提供商**，用于以下功能：
    - 官网：https://platform.moonshot.cn/
 
 4. **Google Gemini**
-   - 模型：`gemini-pro`
+   - 模型：`gemini-1.5-flash`（免费，推荐）、`gemini-pro`（付费）
    - 密钥：`GEMINI_API_KEY`
    - 官网：https://makersuite.google.com/app/apikey
+   - **注意**：`gemini-1.5-flash` 是免费版本，无需充值即可使用；`gemini-pro` 是付费版本，需要账户有余额
 
 5. **OpenAI**
-   - 模型：`gpt-3.5-turbo`、`gpt-4`
+   - 模型：`gpt-3.5-turbo`（新用户有免费额度）、`gpt-4`（付费）
    - 密钥：`OPENAI_API_KEY`
    - 官网：https://platform.openai.com/api-keys
+   - **注意**：新注册用户通常有 $18 或 $100 的免费试用额度，可在免费额度内使用 `gpt-3.5-turbo`；免费额度用完后需要充值才能继续使用
 
 ## 快速配置
 
@@ -138,8 +140,8 @@ pip install google-generativeai==0.3.1
   - **阿里云**：通义千问 Turbo / Plus / Max
   - **DeepSeek**：DeepSeek Chat
   - **Kimi**：Moonshot v1-8k
-  - **Gemini**：Gemini Pro
-  - **OpenAI**：GPT-3.5 Turbo / GPT-4
+  - **Gemini**：Gemini 1.5 Flash（免费，推荐）/ Gemini Pro（付费）
+  - **OpenAI**：GPT-3.5 Turbo（免费额度内可用）/ GPT-4（付费）
 
 ### AI 搜索
 
@@ -161,8 +163,8 @@ pip install google-generativeai==0.3.1
 - `aliyun-qwen-turbo`
 - `deepseek-chat`
 - `kimi-moonshot-v1-8k`
-- `gemini-pro`
-- `openai-gpt-3.5-turbo`
+- `gemini-1.5-flash`（免费）或 `gemini-pro`（付费）
+- `openai-gpt-3.5-turbo`（免费额度内可用）或 `openai-gpt-4`（付费）
 
 ## 动态模型列表
 
@@ -193,12 +195,36 @@ pip install google-generativeai==0.3.1
 3. 使用 AI 搜索功能
 4. 在 AI 助教中提问
 
+## 免费模型推荐
+
+如果您**没有充值的账户**，推荐使用以下免费模型：
+
+1. **Gemini 1.5 Flash**（Google Gemini）
+   - **模型标识**：`gemini-1.5-flash`
+   - **优势**：完全免费，无需充值，快速响应
+   - **获取方式**：在 [Google AI Studio](https://makersuite.google.com/app/apikey) 免费获取 API Key
+   - **推荐指数**：⭐⭐⭐⭐⭐
+
+2. **GPT-3.5 Turbo**（OpenAI）
+   - **模型标识**：`openai-gpt-3.5-turbo`
+   - **优势**：新用户通常有 $18-$100 的免费试用额度
+   - **获取方式**：在 [OpenAI Platform](https://platform.openai.com/api-keys) 注册账号，新用户自动获得免费额度
+   - **注意**：免费额度用完后需要充值
+   - **推荐指数**：⭐⭐⭐⭐
+
 ## 注意事项
 
-1. **API 费用**：使用 AI 功能会产生费用，请关注各提供商的账户余额
-2. **速率限制**：注意各 API 的调用频率限制
+1. **API 费用**：
+   - **Gemini 1.5 Flash**：完全免费，无需充值
+   - **GPT-3.5 Turbo**：新用户有免费额度，用完后需要充值
+   - **其他模型**：通常需要账户有余额才能使用，请关注各提供商的账户余额
+
+2. **速率限制**：注意各 API 的调用频率限制，免费版本通常有更严格的限制
+
 3. **安全性**：不要将 `.env` 文件提交到版本控制系统
+
 4. **密钥管理**：定期更换 API 密钥，确保安全
+
 5. **至少配置一个密钥**：系统需要至少一个 API 密钥才能使用 AI 功能
 
 ## 故障排查

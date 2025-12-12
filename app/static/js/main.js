@@ -79,10 +79,19 @@ document.addEventListener('DOMContentLoaded', function() {
         registerForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const formData = new FormData(registerForm);
+            
+            // 获取选中的兴趣
+            const interests = [];
+            formData.getAll('interests').forEach(val => interests.push(val));
+            
             const data = {
                 username: formData.get('username'),
-                email: formData.get('email'),
-                password: formData.get('password')
+                nickname: formData.get('nickname') || '',
+                email: formData.get('email') || '',
+                password: formData.get('password'),
+                security_question: formData.get('security_question'),
+                security_answer: formData.get('security_answer'),
+                interests: interests
             };
             
             const result = await apiRequest('/auth/register', 'POST', data);

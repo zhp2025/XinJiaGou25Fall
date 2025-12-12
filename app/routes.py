@@ -101,7 +101,11 @@ def community():
     # 为帖子添加作者信息
     for post in hot_posts:
         user = get_user_by_id(post['user_id'])
-        post['author'] = {'username': user['username']} if user else {'username': '未知用户'}
+        if user:
+            display_name = user.get('nickname', user['username'])
+            post['author'] = {'username': display_name}
+        else:
+            post['author'] = {'username': '未知用户'}
         post['comments_count'] = post.get('comments_count', 0)
     
     return render_template('community.html', hot_posts=hot_posts)
@@ -305,7 +309,11 @@ def article_detail(id):
     
     article['views'] += 1
     user = get_user_by_id(article['author_id'])
-    article['author'] = {'username': user['username']} if user else {'username': '系统'}
+    if user:
+        display_name = user.get('nickname', user['username'])
+        article['author'] = {'username': display_name}
+    else:
+        article['author'] = {'username': '系统'}
     
     # 模拟评论（暂时为空）
     comments = []
@@ -315,6 +323,9 @@ def article_detail(id):
 
 # 认证蓝图
 auth_bp = Blueprint('auth', __name__)
+
+# API蓝图
+api_bp = Blueprint('api', __name__)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -326,10 +337,18 @@ def login():
         
         user_data = get_user_by_username(username)
         
-        if user_data and user_data['password'] == password:
+        # 使用check_password_hash验证密码
+        from werkzeug.security import check_password_hash
+        if user_data and check_password_hash(user_data['password'], password):
             user = MockUser(user_data)
             login_user(user, remember=True)
-            return jsonify({'success': True, 'message': '登录成功'})
+            # 检查是否是首次登录
+            first_login = user_data.get('first_login', False)
+            return jsonify({
+                'success': True, 
+                'message': '登录成功',
+                'first_login': first_login
+            })
         else:
             return jsonify({'success': False, 'message': '用户名或密码错误'})
     
@@ -339,21 +358,108 @@ def login():
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     """用户注册"""
+    from app.mock_data import MOCK_USERS
+    import random
+    import string
+    
     if request.method == 'POST':
         data = request.get_json()
         username = data.get('username')
-        email = data.get('email')
+        nickname = data.get('nickname', '').strip()
+        email = data.get('email', '').strip()
         password = data.get('password')
+        security_question = data.get('security_question', '').strip()
+        security_answer = data.get('security_answer', '').strip()
+        interests = data.get('interests', [])
         
-        # 检查用户名和邮箱是否已存在
+        # 必填字段验证
+        if not username:
+            return jsonify({'success': False, 'message': '账号不能为空'})
+        if not password:
+            return jsonify({'success': False, 'message': '密码不能为空'})
+        if not security_question:
+            return jsonify({'success': False, 'message': '二级问题不能为空'})
+        if not security_answer:
+            return jsonify({'success': False, 'message': '问题答案不能为空'})
+        
+        # 检查用户名是否已存在
         if get_user_by_username(username):
-            return jsonify({'success': False, 'message': '用户名已存在'})
+            return jsonify({'success': False, 'message': '账号已存在'})
         
-        # 模拟注册（实际应该保存到数据库）
-        # 这里只是简单返回成功，不实际创建用户
-        return jsonify({'success': False, 'message': '注册功能暂未开放，请使用测试账号登录'})
+        # 检查邮箱是否已存在（如果提供了邮箱）
+        if email:
+            for user in MOCK_USERS:
+                if user.get('email') == email:
+                    return jsonify({'success': False, 'message': '邮箱已被注册'})
+        
+        # 如果没有提供昵称，随机生成10位英文字符
+        if not nickname:
+            nickname = ''.join(random.choices(string.ascii_letters, k=10))
+        
+        # 创建新用户（密码加密）
+        from werkzeug.security import generate_password_hash
+        new_id = max([u['id'] for u in MOCK_USERS], default=0) + 1
+        new_user = {
+            'id': new_id,
+            'username': username,
+            'nickname': nickname,
+            'email': email if email else None,
+            'password': generate_password_hash(password),
+            'role': 'user',
+            'avatar': None,
+            'security_question': security_question,
+            'security_answer': security_answer,
+            'interests': interests if interests else [],
+            'favorites': {},
+            'likes': {},
+            'messages': [],
+            'first_login': True
+        }
+        MOCK_USERS.append(new_user)
+        
+        # 自动登录
+        user = MockUser(new_user)
+        login_user(user, remember=True)
+        
+        return jsonify({'success': True, 'message': '注册成功', 'nickname': nickname})
     
     return render_template('register.html')
+
+
+@api_bp.route('/auth/security-question', methods=['GET'])
+def get_security_question_by_username():
+    """根据用户名获取二级问题"""
+    username = request.args.get('username')
+    user_data = get_user_by_username(username)
+    if user_data:
+        return jsonify({'success': True, 'question': user_data.get('security_question', '')})
+    return jsonify({'success': False, 'message': '用户不存在'})
+
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """忘记密码"""
+    if request.method == 'POST':
+        data = request.get_json()
+        username = data.get('username')
+        security_answer = data.get('security_answer')
+        new_password = data.get('new_password')
+        
+        user_data = get_user_by_username(username)
+        if not user_data:
+            return jsonify({'success': False, 'message': '用户名不存在'})
+        
+        # 验证二级问题答案
+        if user_data.get('security_answer', '').lower() != security_answer.lower():
+            return jsonify({'success': False, 'message': '二级问题答案错误'})
+        
+        # 更新密码（加密存储）
+        from werkzeug.security import generate_password_hash
+        user_data['password'] = generate_password_hash(new_password)
+        
+        return jsonify({'success': True, 'message': '密码重置成功，请重新登录'})
+    
+    return render_template('forgot_password.html')
 
 
 @auth_bp.route('/logout')
@@ -364,9 +470,6 @@ def logout():
     flash('您已成功登出')
     return redirect(url_for('main.index'))
 
-
-# API 蓝图
-api_bp = Blueprint('api', __name__)
 
 @api_bp.route('/ai-chat', methods=['POST'])
 @login_required
@@ -409,26 +512,177 @@ def add_comment(post_id):
     return jsonify({'success': True, 'comment_id': 1, 'message': '评论发表成功（模拟数据）'})
 
 
+# 存储用户的点赞状态（模拟数据）
+# 格式：{ user_id: { post_id: bool } }
+FORUM_LIKES = {}
+ETHICS_LIKES = {}
+
 @api_bp.route('/forum/<int:post_id>/like', methods=['POST'])
 @login_required
 def like_post(post_id):
-    """点赞帖子"""
+    """点赞/取消点赞帖子"""
+    from app.mock_data import USER_LIKES
     post = next((p for p in MOCK_FORUM_POSTS if p['id'] == post_id), None)
-    if post:
+    if not post:
+        return jsonify({'success': False, 'message': '帖子不存在'})
+    
+    user_id = current_user.id
+    
+    # 初始化用户点赞记录
+    if user_id not in FORUM_LIKES:
+        FORUM_LIKES[user_id] = {}
+    if user_id not in USER_LIKES:
+        USER_LIKES[user_id] = {'forum': {}}
+    if 'forum' not in USER_LIKES[user_id]:
+        USER_LIKES[user_id]['forum'] = {}
+    
+    # 检查当前点赞状态
+    is_liked = FORUM_LIKES[user_id].get(post_id, False)
+    
+    # 切换点赞状态
+    if is_liked:
+        # 取消点赞
+        post['likes'] -= 1
+        FORUM_LIKES[user_id][post_id] = False
+        USER_LIKES[user_id]['forum'][str(post_id)] = None  # 删除记录
+        is_liked = False
+    else:
+        # 点赞
         post['likes'] += 1
-        return jsonify({'success': True, 'likes': post['likes']})
-    return jsonify({'success': False, 'message': '帖子不存在'})
+        FORUM_LIKES[user_id][post_id] = True
+        USER_LIKES[user_id]['forum'][str(post_id)] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        is_liked = True
+    
+    return jsonify({
+        'success': True, 
+        'likes': post['likes'],
+        'is_liked': is_liked
+    })
 
 
 @api_bp.route('/ethics/<int:topic_id>/like', methods=['POST'])
 @login_required
 def like_ethics_topic(topic_id):
-    """点赞伦理专题"""
+    """点赞/取消点赞伦理专题"""
+    from app.mock_data import USER_LIKES
     topic = next((t for t in MOCK_ETHICS_TOPICS if t['id'] == topic_id), None)
-    if topic:
+    if not topic:
+        return jsonify({'success': False, 'message': '专题不存在'})
+    
+    user_id = current_user.id
+    
+    # 初始化用户点赞记录
+    if user_id not in ETHICS_LIKES:
+        ETHICS_LIKES[user_id] = {}
+    if user_id not in USER_LIKES:
+        USER_LIKES[user_id] = {'ethics': {}}
+    if 'ethics' not in USER_LIKES[user_id]:
+        USER_LIKES[user_id]['ethics'] = {}
+    
+    # 检查当前点赞状态
+    is_liked = ETHICS_LIKES[user_id].get(topic_id, False)
+    
+    # 切换点赞状态
+    if is_liked:
+        # 取消点赞
+        topic['likes'] -= 1
+        ETHICS_LIKES[user_id][topic_id] = False
+        USER_LIKES[user_id]['ethics'][str(topic_id)] = None  # 删除记录
+        is_liked = False
+    else:
+        # 点赞
         topic['likes'] += 1
-        return jsonify({'success': True, 'likes': topic['likes']})
-    return jsonify({'success': False, 'message': '专题不存在'})
+        ETHICS_LIKES[user_id][topic_id] = True
+        USER_LIKES[user_id]['ethics'][str(topic_id)] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        is_liked = True
+    
+    return jsonify({
+        'success': True, 
+        'likes': topic['likes'],
+        'is_liked': is_liked
+    })
+
+
+# 收藏功能API
+@api_bp.route('/article/<int:article_id>/favorite', methods=['POST'])
+@login_required
+def favorite_article(article_id):
+    """收藏/取消收藏文章"""
+    from app.mock_data import USER_FAVORITES
+    article = next((a for a in MOCK_ARTICLES if a['id'] == article_id), None)
+    if not article:
+        return jsonify({'success': False, 'message': '文章不存在'})
+    
+    user_id = current_user.id
+    if user_id not in USER_FAVORITES:
+        USER_FAVORITES[user_id] = {}
+    if 'article' not in USER_FAVORITES[user_id]:
+        USER_FAVORITES[user_id]['article'] = {}
+    
+    # 切换收藏状态
+    is_favorited = article_id in USER_FAVORITES[user_id]['article']
+    if is_favorited:
+        del USER_FAVORITES[user_id]['article'][article_id]
+        is_favorited = False
+    else:
+        USER_FAVORITES[user_id]['article'][article_id] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        is_favorited = True
+    
+    return jsonify({'success': True, 'is_favorited': is_favorited})
+
+
+@api_bp.route('/forum/<int:post_id>/favorite', methods=['POST'])
+@login_required
+def favorite_forum_post(post_id):
+    """收藏/取消收藏论坛帖子"""
+    from app.mock_data import USER_FAVORITES
+    post = next((p for p in MOCK_FORUM_POSTS if p['id'] == post_id), None)
+    if not post:
+        return jsonify({'success': False, 'message': '帖子不存在'})
+    
+    user_id = current_user.id
+    if user_id not in USER_FAVORITES:
+        USER_FAVORITES[user_id] = {}
+    if 'forum' not in USER_FAVORITES[user_id]:
+        USER_FAVORITES[user_id]['forum'] = {}
+    
+    # 切换收藏状态
+    is_favorited = post_id in USER_FAVORITES[user_id]['forum']
+    if is_favorited:
+        del USER_FAVORITES[user_id]['forum'][post_id]
+        is_favorited = False
+    else:
+        USER_FAVORITES[user_id]['forum'][post_id] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        is_favorited = True
+    
+    return jsonify({'success': True, 'is_favorited': is_favorited})
+
+
+@api_bp.route('/ethics/<int:topic_id>/favorite', methods=['POST'])
+@login_required
+def favorite_ethics_topic(topic_id):
+    """收藏/取消收藏伦理专题"""
+    from app.mock_data import USER_FAVORITES
+    topic = next((t for t in MOCK_ETHICS_TOPICS if t['id'] == topic_id), None)
+    if not topic:
+        return jsonify({'success': False, 'message': '专题不存在'})
+    
+    user_id = current_user.id
+    if user_id not in USER_FAVORITES:
+        USER_FAVORITES[user_id] = {}
+    if 'ethics' not in USER_FAVORITES[user_id]:
+        USER_FAVORITES[user_id]['ethics'] = {}
+    
+    # 切换收藏状态
+    is_favorited = topic_id in USER_FAVORITES[user_id]['ethics']
+    if is_favorited:
+        del USER_FAVORITES[user_id]['ethics'][topic_id]
+        is_favorited = False
+    else:
+        USER_FAVORITES[user_id]['ethics'][topic_id] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        is_favorited = True
+    
+    return jsonify({'success': True, 'is_favorited': is_favorited})
 
 
 @api_bp.route('/ethics/<int:topic_id>/comment', methods=['POST'])
@@ -446,6 +700,292 @@ def get_models():
     from app.ai_service import get_available_models
     models = get_available_models()
     return jsonify({'success': True, 'models': models})
+
+
+# 个人中心路由
+@main_bp.route('/profile')
+@login_required
+def profile():
+    """个人中心"""
+    return render_template('profile.html')
+
+
+# 个人中心API
+@api_bp.route('/profile/favorites', methods=['GET'])
+@login_required
+def get_favorites():
+    """获取收藏列表"""
+    from app.mock_data import USER_FAVORITES, MOCK_ARTICLES, MOCK_FORUM_POSTS, MOCK_ETHICS_TOPICS
+    user_id = current_user.id
+    favorites = USER_FAVORITES.get(user_id, {})
+    
+    result = []
+    # 处理文章收藏
+    if 'article' in favorites and isinstance(favorites['article'], dict):
+        for article_id, timestamp in favorites['article'].items():
+            if timestamp:  # 只显示已收藏的
+                article = next((a for a in MOCK_ARTICLES if a['id'] == int(article_id)), None)
+                if article:
+                    result.append({
+                        'type': '文章',
+                        'title': article['title'],
+                        'url': url_for('main.article_detail', id=article['id']),
+                        'timestamp': timestamp
+                    })
+    
+    # 处理论坛帖子收藏
+    if 'forum' in favorites and isinstance(favorites['forum'], dict):
+        for post_id, timestamp in favorites['forum'].items():
+            if timestamp:  # 只显示已收藏的
+                post = next((p for p in MOCK_FORUM_POSTS if p['id'] == int(post_id)), None)
+                if post:
+                    result.append({
+                        'type': '论坛帖子',
+                        'title': post['title'],
+                        'url': url_for('main.forum_post', post_id=post['id']),
+                        'timestamp': timestamp
+                    })
+    
+    # 处理伦理专题收藏
+    if 'ethics' in favorites and isinstance(favorites['ethics'], dict):
+        for topic_id, timestamp in favorites['ethics'].items():
+            if timestamp:  # 只显示已收藏的
+                topic = next((t for t in MOCK_ETHICS_TOPICS if t['id'] == int(topic_id)), None)
+                if topic:
+                    result.append({
+                        'type': '伦理专题',
+                        'title': topic['title'],
+                        'url': url_for('main.ethics_topic', slug=topic['slug']),
+                        'timestamp': timestamp
+                    })
+    
+    # 按时间倒序排列
+    result.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+    
+    return jsonify({'success': True, 'favorites': result})
+
+
+@api_bp.route('/profile/likes', methods=['GET'])
+@login_required
+def get_likes():
+    """获取点赞记录"""
+    from app.mock_data import USER_LIKES, MOCK_FORUM_POSTS, MOCK_ETHICS_TOPICS
+    
+    user_id = current_user.id
+    likes = USER_LIKES.get(user_id, {})
+    
+    result = []
+    # 论坛帖子点赞
+    if 'forum' in likes and isinstance(likes['forum'], dict):
+        for post_id, timestamp in likes['forum'].items():
+            if timestamp:  # 只显示已点赞的
+                post = next((p for p in MOCK_FORUM_POSTS if p['id'] == int(post_id)), None)
+                if post:
+                    result.append({
+                        'type': '论坛帖子',
+                        'title': post['title'],
+                        'url': url_for('main.forum_post', post_id=post['id']),
+                        'timestamp': timestamp
+                    })
+    
+    # 伦理专题点赞
+    if 'ethics' in likes and isinstance(likes['ethics'], dict):
+        for topic_id, timestamp in likes['ethics'].items():
+            if timestamp:  # 只显示已点赞的
+                topic = next((t for t in MOCK_ETHICS_TOPICS if t['id'] == int(topic_id)), None)
+                if topic:
+                    result.append({
+                        'type': '伦理专题',
+                        'title': topic['title'],
+                        'url': url_for('main.ethics_topic', slug=topic['slug']),
+                        'timestamp': timestamp
+                    })
+    
+    # 按时间倒序排列
+    result.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+    
+    return jsonify({'success': True, 'likes': result})
+
+
+@api_bp.route('/profile/messages', methods=['GET'])
+@login_required
+def get_messages():
+    """获取消息列表"""
+    from app.mock_data import USER_MESSAGES
+    user_id = current_user.id
+    messages = USER_MESSAGES.get(user_id, [])
+    # 按时间倒序排列
+    messages.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+    return jsonify({'success': True, 'messages': messages})
+
+
+@api_bp.route('/profile/messages/<int:message_id>/read', methods=['POST'])
+@login_required
+def mark_message_read(message_id):
+    """标记消息为已读"""
+    from app.mock_data import USER_MESSAGES
+    user_id = current_user.id
+    messages = USER_MESSAGES.get(user_id, [])
+    for msg in messages:
+        if msg.get('id') == message_id:
+            msg['read'] = True
+            break
+    return jsonify({'success': True})
+
+
+@api_bp.route('/auth/check-first-login', methods=['GET'])
+@login_required
+def check_first_login():
+    """检查是否首次登录"""
+    from app.mock_data import get_user_by_id
+    user_data = get_user_by_id(current_user.id)
+    if user_data:
+        return jsonify({'success': True, 'first_login': user_data.get('first_login', False)})
+    return jsonify({'success': False})
+
+
+@api_bp.route('/profile/interests', methods=['POST'])
+@login_required
+def update_interests():
+    """更新用户兴趣"""
+    from app.mock_data import get_user_by_id
+    data = request.get_json()
+    interests = data.get('interests', [])
+    
+    user_data = get_user_by_id(current_user.id)
+    if user_data:
+        user_data['interests'] = interests
+        user_data['first_login'] = False  # 标记已设置兴趣
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'message': '用户不存在'})
+
+
+@api_bp.route('/profile/security-question', methods=['GET'])
+@login_required
+def get_security_question():
+    """获取二级问题"""
+    from app.mock_data import get_user_by_id
+    user_data = get_user_by_id(current_user.id)
+    if user_data:
+        return jsonify({'success': True, 'question': user_data.get('security_question', '')})
+    return jsonify({'success': False, 'message': '用户不存在'})
+
+
+@api_bp.route('/profile/password', methods=['POST'])
+@login_required
+def change_password():
+    """修改密码"""
+    from app.mock_data import get_user_by_id, MOCK_USERS
+    data = request.get_json()
+    security_answer = data.get('security_answer', '')
+    new_password = data.get('new_password', '')
+    
+    user_data = get_user_by_id(current_user.id)
+    if not user_data:
+        return jsonify({'success': False, 'message': '用户不存在'})
+    
+    # 验证二级问题答案
+    if user_data.get('security_answer', '').lower() != security_answer.lower():
+        return jsonify({'success': False, 'message': '二级问题答案错误'})
+    
+        # 更新密码（加密存储）
+        from werkzeug.security import generate_password_hash
+        user_data['password'] = generate_password_hash(new_password)
+        # 强制退出（不提醒用户）
+    from flask_login import logout_user
+    logout_user()
+    
+    return jsonify({'success': True, 'message': '密码修改成功，请重新登录'})
+
+
+@api_bp.route('/profile/security', methods=['POST'])
+@login_required
+def change_security():
+    """修改二级密码"""
+    from app.mock_data import get_user_by_id
+    data = request.get_json()
+    current_answer = data.get('current_answer', '')
+    new_question = data.get('new_question', '')
+    new_answer = data.get('new_answer', '')
+    
+    user_data = get_user_by_id(current_user.id)
+    if not user_data:
+        return jsonify({'success': False, 'message': '用户不存在'})
+    
+    # 验证当前二级问题答案
+    if user_data.get('security_answer', '').lower() != current_answer.lower():
+        return jsonify({'success': False, 'message': '当前二级问题答案错误'})
+    
+    # 更新二级问题
+    user_data['security_question'] = new_question
+    user_data['security_answer'] = new_answer
+    
+    return jsonify({'success': True, 'message': '二级密码修改成功'})
+
+
+@api_bp.route('/profile/username', methods=['POST'])
+@login_required
+def update_username():
+    """更新昵称"""
+    from app.mock_data import get_user_by_id, get_user_by_username
+    data = request.get_json()
+    new_username = data.get('username', '').strip()
+    
+    if not new_username:
+        return jsonify({'success': False, 'message': '昵称不能为空'})
+    
+    # 检查用户名是否已存在
+    existing_user = get_user_by_username(new_username)
+    if existing_user and existing_user['id'] != current_user.id:
+        return jsonify({'success': False, 'message': '用户名已存在'})
+    
+    user_data = get_user_by_id(current_user.id)
+    if user_data:
+        user_data['username'] = new_username
+        return jsonify({'success': True, 'message': '昵称更新成功'})
+    
+    return jsonify({'success': False, 'message': '用户不存在'})
+
+
+@api_bp.route('/profile/avatar', methods=['POST'])
+@login_required
+def upload_avatar():
+    """上传头像"""
+    from werkzeug.utils import secure_filename
+    import os
+    from app.mock_data import get_user_by_id
+    
+    if 'avatar' not in request.files:
+        return jsonify({'success': False, 'message': '没有上传文件'})
+    
+    file = request.files['avatar']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': '没有选择文件'})
+    
+    # 检查文件类型
+    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+        return jsonify({'success': False, 'message': '只支持图片格式'})
+    
+    # 保存文件
+    upload_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'avatars')
+    os.makedirs(upload_folder, exist_ok=True)
+    
+    filename = secure_filename(f"{current_user.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+    filepath = os.path.join(upload_folder, filename)
+    file.save(filepath)
+    
+    # 更新用户头像
+    user_data = get_user_by_id(current_user.id)
+    if user_data:
+        # 使用相对路径，前端会通过url_for处理
+        avatar_path = f'uploads/avatars/{filename}'
+        user_data['avatar'] = avatar_path
+        # 返回完整URL路径
+        from flask import url_for
+        avatar_url = url_for('static', filename=avatar_path)
+        return jsonify({'success': True, 'avatar_url': avatar_url})
+    
+    return jsonify({'success': False, 'message': '用户不存在'})
 
 
 @api_bp.route('/ai-assistant', methods=['POST'])
@@ -481,7 +1021,7 @@ def ai_assistant_api():
         elif Config.KIMI_API_KEY:
             model = 'kimi-moonshot-v1-8k'
         elif Config.GEMINI_API_KEY:
-            model = 'gemini-pro'
+            model = 'gemini-1.5-flash'  # 优先使用免费版本
         elif Config.OPENAI_API_KEY:
             model = 'openai-gpt-3.5-turbo'
     

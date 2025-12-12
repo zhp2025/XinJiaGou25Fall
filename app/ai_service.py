@@ -46,7 +46,7 @@ def chat_with_model(message, model='aliyun-qwen-turbo'):
             - aliyun-qwen-turbo / aliyun-qwen-plus / aliyun-qwen-max
             - deepseek-chat
             - kimi-moonshot-v1-8k
-            - gemini-pro
+            - gemini-1.5-flash (免费) / gemini-pro (付费)
             - openai-gpt-3.5-turbo / openai-gpt-4
     
     Returns:
@@ -60,16 +60,24 @@ def chat_with_model(message, model='aliyun-qwen-turbo'):
         }
     
     # 解析模型标识
-    parts = model.split('-', 1)
-    if len(parts) != 2:
-        return {
-            'success': False,
-            'message': f'无效的模型标识: {model}',
-            'model': model
-        }
-    
-    provider = parts[0]
-    model_name = parts[1]
+    # 特殊处理 gemini-1.5-flash（包含多个连字符）
+    if model.startswith('gemini-1.5-flash'):
+        provider = 'gemini'
+        model_name = '1.5-flash'
+    elif model.startswith('gemini-'):
+        parts = model.split('-', 1)
+        provider = parts[0]
+        model_name = parts[1]
+    else:
+        parts = model.split('-', 1)
+        if len(parts) != 2:
+            return {
+                'success': False,
+                'message': f'无效的模型标识: {model}',
+                'model': model
+            }
+        provider = parts[0]
+        model_name = parts[1]
     
     # 根据提供商调用相应的API
     if provider == 'aliyun':
@@ -239,7 +247,10 @@ def _chat_gemini(message, model_name='pro'):
         }
     
     try:
-        model = genai.GenerativeModel(f'gemini-{model_name}')
+        # 处理模型名称：gemini-1.5-flash 或 gemini-pro
+        # model_name 可能是 '1.5-flash' 或 'pro'
+        full_model_name = f'gemini-{model_name}'
+        model = genai.GenerativeModel(full_model_name)
         
         prompt = f"""你是一个专业的AI助手，擅长回答关于人工智能、机器学习、深度学习等相关问题。请用中文回答。
 
@@ -250,7 +261,7 @@ def _chat_gemini(message, model_name='pro'):
         return {
             'success': True,
             'message': response.text,
-            'model': f'gemini-{model_name}'
+            'model': full_model_name
         }
     except Exception as e:
         return {
@@ -372,12 +383,20 @@ def get_available_models():
     
     # Gemini
     if Config.GEMINI_API_KEY:
-        models.append({
-            'value': 'gemini-pro',
-            'name': 'Gemini Pro',
-            'provider': 'Google',
-            'description': 'Google 多模态大模型'
-        })
+        models.extend([
+            {
+                'value': 'gemini-1.5-flash',
+                'name': 'Gemini 1.5 Flash',
+                'provider': 'Google',
+                'description': '免费版本，快速响应（推荐）'
+            },
+            {
+                'value': 'gemini-pro',
+                'name': 'Gemini Pro',
+                'provider': 'Google',
+                'description': '付费版本，更强能力'
+            }
+        ])
     
     # OpenAI
     if Config.OPENAI_API_KEY:

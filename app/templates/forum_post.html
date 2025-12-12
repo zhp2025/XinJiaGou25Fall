@@ -13,9 +13,14 @@
             </div>
             <div class="post-stats">
                 <span>👁 {{ post.views }}</span>
-                <button class="like-btn" onclick="likePost({{ post.id }})">
-                    ❤️ <span id="likes-{{ post.id }}">{{ post.likes }}</span>
+                <button class="like-btn" id="like-btn-{{ post.id }}" onclick="likePost({{ post.id }})">
+                    <span class="like-icon">🤍</span> <span id="likes-{{ post.id }}">{{ post.likes }}</span>
                 </button>
+                {% if current_user.is_authenticated %}
+                <button class="favorite-btn" id="favorite-btn-{{ post.id }}" onclick="favoritePost({{ post.id }})">
+                    <span class="favorite-icon">⭐</span>
+                </button>
+                {% endif %}
             </div>
         </div>
         
@@ -139,16 +144,90 @@
 .comment-content {
     line-height: 1.6;
 }
+
+.like-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.like-btn:hover {
+    background: var(--light-color);
+    border-color: var(--primary-color);
+}
+
+.like-btn.liked {
+    border-color: #FF5722;
+    background: rgba(255, 87, 34, 0.1);
+}
+
+.like-btn.liked:hover {
+    background: rgba(255, 87, 34, 0.15);
+}
+
+.favorite-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.favorite-btn:hover {
+    background: var(--light-color);
+    border-color: var(--primary-color);
+}
+
+.favorite-btn.favorited {
+    border-color: #FFC107;
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.favorite-btn.favorited .favorite-icon {
+    color: #FFC107;
+}
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+async function favoritePost(postId) {
+    const result = await apiRequest(`/api/forum/${postId}/favorite`, 'POST');
+    if (result.success) {
+        const btn = document.getElementById(`favorite-btn-${postId}`);
+        if (result.is_favorited) {
+            btn.classList.add('favorited');
+            showMessage('收藏成功', 'success');
+        } else {
+            btn.classList.remove('favorited');
+            showMessage('已取消收藏', 'info');
+        }
+    }
+}
+
 async function likePost(postId) {
     const result = await apiRequest(`/api/forum/${postId}/like`, 'POST');
     if (result.success) {
+        // 更新点赞数
         document.getElementById(`likes-${postId}`).textContent = result.likes;
-        showMessage('点赞成功', 'success');
+        
+        // 更新按钮样式
+        const likeBtn = document.getElementById(`like-btn-${postId}`);
+        const likeIcon = likeBtn.querySelector('.like-icon');
+        
+        if (result.is_liked) {
+            likeIcon.textContent = '❤️';
+            likeBtn.classList.add('liked');
+            showMessage('点赞成功', 'success');
+        } else {
+            likeIcon.textContent = '🤍';
+            likeBtn.classList.remove('liked');
+            showMessage('已取消点赞', 'info');
+        }
     }
 }
 

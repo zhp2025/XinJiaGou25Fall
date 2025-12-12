@@ -1,0 +1,669 @@
+{% extends "base.html" %}
+
+{% block title %}个人中心 - AICove{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="profile-header">
+        <div class="avatar-section">
+            <div class="avatar-container">
+                <img id="avatar-img" src="{% if current_user.avatar %}{% set avatar_file = current_user.avatar.replace('/static/', '') if current_user.avatar.startswith('/static/') else current_user.avatar %}{{ url_for('static', filename=avatar_file) }}{% else %}https://via.placeholder.com/120?text=头像{% endif %}" alt="头像" class="avatar-large" onerror="this.src='https://via.placeholder.com/120?text=头像'">
+                <button class="avatar-edit-btn" onclick="document.getElementById('avatar-upload').click()">
+                    <span>✏️</span>
+                </button>
+                <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="uploadAvatar(event)">
+            </div>
+            <div class="user-info-section">
+                <h2>{{ current_user.nickname if current_user.nickname else current_user.username }}</h2>
+                <p class="user-email">{{ current_user.email or '未设置邮箱' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-tabs">
+        <button class="tab-btn active" onclick="switchTab('favorites')">收藏</button>
+        <button class="tab-btn" onclick="switchTab('likes')">点赞记录</button>
+        <button class="tab-btn" onclick="switchTab('messages')">消息 <span id="message-count" class="badge">0</span></button>
+        <button class="tab-btn" onclick="switchTab('settings')">设置</button>
+    </div>
+
+    <!-- 收藏标签页 -->
+    <div id="tab-favorites" class="tab-content active">
+        <h3>我的收藏</h3>
+        <div id="favorites-list" class="content-list">
+            <p class="empty-message">暂无收藏内容</p>
+        </div>
+    </div>
+
+    <!-- 点赞记录标签页 -->
+    <div id="tab-likes" class="tab-content">
+        <h3>点赞记录</h3>
+        <div id="likes-list" class="content-list">
+            <p class="empty-message">暂无点赞记录</p>
+        </div>
+    </div>
+
+    <!-- 消息标签页 -->
+    <div id="tab-messages" class="tab-content">
+        <h3>消息中心</h3>
+        <div id="messages-list" class="messages-list">
+            <p class="empty-message">暂无消息</p>
+        </div>
+    </div>
+
+    <!-- 设置标签页 -->
+    <div id="tab-settings" class="tab-content">
+        <div class="settings-section">
+            <h3>基本信息</h3>
+            <div class="setting-item">
+                <label>昵称：</label>
+                <div class="setting-control">
+                    <input type="text" id="username-input" value="{{ current_user.username }}">
+                    <button class="btn btn-primary" onclick="updateUsername()">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>安全设置</h3>
+            <div class="setting-item">
+                <label>修改密码：</label>
+                <button class="btn btn-outline" onclick="showChangePasswordModal()">修改密码</button>
+            </div>
+            <div class="setting-item">
+                <label>修改二级密码：</label>
+                <button class="btn btn-outline" onclick="showChangeSecurityModal()">修改二级密码</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 修改密码模态框 -->
+<div id="password-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('password-modal')">&times;</span>
+        <h3>修改密码</h3>
+        <form id="change-password-form">
+            <div class="form-group">
+                <label>请输入二级问题答案：</label>
+                <p id="security-question-display" class="security-question"></p>
+                <input type="text" id="security-answer-password" required placeholder="请输入答案">
+            </div>
+            <div class="form-group">
+                <label>新密码：</label>
+                <input type="password" id="new-password" required>
+            </div>
+            <div class="form-group">
+                <label>确认新密码：</label>
+                <input type="password" id="confirm-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">确认修改</button>
+        </form>
+    </div>
+</div>
+
+<!-- 修改二级密码模态框 -->
+<div id="security-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('security-modal')">&times;</span>
+        <h3>修改二级密码</h3>
+        <form id="change-security-form">
+            <div class="form-group">
+                <label>请输入当前二级问题答案：</label>
+                <p id="current-security-question" class="security-question"></p>
+                <input type="text" id="current-security-answer" required placeholder="请输入答案">
+            </div>
+            <div class="form-group">
+                <label>新的二级问题：</label>
+                <select id="new-security-question" required>
+                    <option value="">请选择问题</option>
+                    <option value="您母亲的名字是？">您母亲的名字是？</option>
+                    <option value="您父亲的名字是？">您父亲的名字是？</option>
+                    <option value="您最喜欢的颜色是？">您最喜欢的颜色是？</option>
+                    <option value="您的出生地是？">您的出生地是？</option>
+                    <option value="您的宠物名字是？">您的宠物名字是？</option>
+                    <option value="您的小学名称是？">您的小学名称是？</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>新答案：</label>
+                <input type="text" id="new-security-answer" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">确认修改</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-header {
+    background: white;
+    padding: 2.5rem 3rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 100%;
+}
+
+.avatar-section {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 2.5rem;
+    width: 100%;
+    min-width: 500px;
+}
+
+.avatar-container {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    flex-shrink: 0;
+}
+
+.user-info-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.user-info-section h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: var(--text-color);
+}
+
+.user-info-section .user-email {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.avatar-large {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-color);
+    display: block;
+}
+
+.avatar-edit-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow);
+}
+
+.avatar-edit-btn:hover {
+    background: var(--primary-dark);
+}
+
+.user-email {
+    color: var(--text-light);
+    margin-top: 0.5rem;
+}
+
+.profile-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--text-light);
+    transition: all 0.3s;
+}
+
+.tab-btn:hover {
+    color: var(--primary-color);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.content-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.content-item {
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.content-item:hover {
+    box-shadow: var(--shadow);
+}
+
+.content-item h4 {
+    margin-bottom: 0.5rem;
+}
+
+.content-item a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.content-item a:hover {
+    text-decoration: underline;
+}
+
+.empty-message {
+    text-align: center;
+    color: var(--text-light);
+    padding: 2rem;
+}
+
+.settings-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.setting-item label {
+    width: 150px;
+    font-weight: 500;
+}
+
+.setting-control {
+    display: flex;
+    gap: 1rem;
+    flex: 1;
+}
+
+.setting-control input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.messages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.message-item {
+    padding: 1rem;
+    border-left: 4px solid var(--primary-color);
+    background: var(--light-color);
+    border-radius: 4px;
+}
+
+.message-item.unread {
+    background: #E3F2FD;
+    border-left-color: #2196F3;
+}
+
+.message-item.system {
+    border-left-color: #FF9800;
+}
+
+.badge {
+    background: #F44336;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 2rem;
+    cursor: pointer;
+    color: var(--text-light);
+}
+
+.close:hover {
+    color: var(--text-color);
+}
+
+.security-question {
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 切换标签页
+function switchTab(tabName) {
+    // 隐藏所有标签内容
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    // 移除所有按钮的active状态
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    // 显示选中的标签内容
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    // 激活对应的按钮
+    event.target.classList.add('active');
+    
+    // 加载对应内容
+    if (tabName === 'favorites') {
+        loadFavorites();
+    } else if (tabName === 'likes') {
+        loadLikes();
+    } else if (tabName === 'messages') {
+        loadMessages();
+    }
+}
+
+// 加载收藏
+async function loadFavorites() {
+    const result = await apiRequest('/api/profile/favorites', 'GET');
+    if (result.success && result.favorites.length > 0) {
+        const listEl = document.getElementById('favorites-list');
+        listEl.innerHTML = result.favorites.map(item => `
+            <div class="content-item">
+                <h4><a href="${item.url}">${item.title}</a></h4>
+                <p>类型：${item.type} | 收藏时间：${item.timestamp}</p>
+            </div>
+        `).join('');
+    }
+}
+
+// 加载点赞记录
+async function loadLikes() {
+    const result = await apiRequest('/api/profile/likes', 'GET');
+    if (result.success && result.likes.length > 0) {
+        const listEl = document.getElementById('likes-list');
+        listEl.innerHTML = result.likes.map(item => `
+            <div class="content-item">
+                <h4><a href="${item.url}">${item.title}</a></h4>
+                <p>类型：${item.type} | 点赞时间：${item.timestamp}</p>
+            </div>
+        `).join('');
+    }
+}
+
+// 加载消息
+async function loadMessages() {
+    const result = await apiRequest('/api/profile/messages', 'GET');
+    if (result.success) {
+        const listEl = document.getElementById('messages-list');
+        if (result.messages.length === 0) {
+            listEl.innerHTML = '<p class="empty-message">暂无消息</p>';
+        } else {
+            listEl.innerHTML = result.messages.map(msg => `
+                <div class="message-item ${msg.read ? '' : 'unread'} ${msg.type}">
+                    <h4>${msg.title}</h4>
+                    <p>${msg.content}</p>
+                    <small>${msg.timestamp}</small>
+                </div>
+            `).join('');
+        }
+        // 更新消息数量
+        const unreadCount = result.messages.filter(m => !m.read).length;
+        const badgeEl = document.getElementById('message-count');
+        if (unreadCount > 0) {
+            badgeEl.textContent = unreadCount;
+            badgeEl.style.display = 'inline';
+        } else {
+            badgeEl.style.display = 'none';
+        }
+    }
+}
+
+// 上传头像
+async function uploadAvatar(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    try {
+        const response = await fetch('/api/profile/avatar', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (result.success) {
+            document.getElementById('avatar-img').src = result.avatar_url;
+            showMessage('头像更新成功', 'success');
+        } else {
+            showMessage(result.message || '上传失败', 'error');
+        }
+    } catch (error) {
+        showMessage('上传失败', 'error');
+    }
+}
+
+// 更新昵称
+async function updateUsername() {
+    const newUsername = document.getElementById('username-input').value.trim();
+    if (!newUsername) {
+        showMessage('昵称不能为空', 'error');
+        return;
+    }
+    
+    const result = await apiRequest('/api/profile/username', 'POST', { username: newUsername });
+    if (result.success) {
+        showMessage('昵称更新成功', 'success');
+        location.reload();
+    }
+}
+
+// 显示修改密码模态框
+async function showChangePasswordModal() {
+    const result = await apiRequest('/api/profile/security-question', 'GET');
+    if (result.success) {
+        document.getElementById('security-question-display').textContent = result.question;
+        document.getElementById('password-modal').style.display = 'block';
+    }
+}
+
+// 显示修改二级密码模态框
+async function showChangeSecurityModal() {
+    const result = await apiRequest('/api/profile/security-question', 'GET');
+    if (result.success) {
+        document.getElementById('current-security-question').textContent = result.question;
+        document.getElementById('security-modal').style.display = 'block';
+    }
+}
+
+// 关闭模态框
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// 修改密码表单提交
+document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const answer = document.getElementById('security-answer-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    if (newPassword !== confirmPassword) {
+        showMessage('两次输入的密码不一致', 'error');
+        return;
+    }
+    
+    const result = await apiRequest('/api/profile/password', 'POST', {
+        security_answer: answer,
+        new_password: newPassword
+    });
+    
+    if (result.success) {
+        showMessage('密码修改成功，请重新登录', 'success');
+        setTimeout(() => {
+            window.location.href = '/auth/logout';
+        }, 1500);
+    }
+});
+
+// 修改二级密码表单提交
+document.getElementById('change-security-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const currentAnswer = document.getElementById('current-security-answer').value;
+    const newQuestion = document.getElementById('new-security-question').value;
+    const newAnswer = document.getElementById('new-security-answer').value;
+    
+    const result = await apiRequest('/api/profile/security', 'POST', {
+        current_answer: currentAnswer,
+        new_question: newQuestion,
+        new_answer: newAnswer
+    });
+    
+    if (result.success) {
+        showMessage('二级密码修改成功', 'success');
+        closeModal('security-modal');
+    }
+});
+
+// 点击模态框外部关闭
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+
+// 检查首次登录
+async function checkFirstLogin() {
+    try {
+        const result = await apiRequest('/api/auth/check-first-login', 'GET');
+        if (result.success && result.first_login) {
+            showInterestModal();
+        }
+    } catch (error) {
+        console.error('检查首次登录失败:', error);
+    }
+}
+
+// 显示兴趣选择弹窗
+function showInterestModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'interest-modal';
+    modal.style.display = 'block';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>欢迎来到 AICove！</h3>
+            <p>请选择您感兴趣的领域，我们将为您推送相关内容（可跳过）</p>
+            <div class="interests-group">
+                <label class="checkbox-label"><input type="checkbox" value="LLM"> 大语言模型</label>
+                <label class="checkbox-label"><input type="checkbox" value="计算机视觉"> 计算机视觉</label>
+                <label class="checkbox-label"><input type="checkbox" value="深度学习"> 深度学习</label>
+                <label class="checkbox-label"><input type="checkbox" value="强化学习"> 强化学习</label>
+                <label class="checkbox-label"><input type="checkbox" value="AI伦理"> AI伦理</label>
+                <label class="checkbox-label"><input type="checkbox" value="AI应用"> AI应用</label>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button class="btn btn-primary" onclick="saveInterests()">保存</button>
+                <button class="btn btn-outline" onclick="skipInterests()">跳过</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// 保存兴趣
+async function saveInterests() {
+    const checkboxes = document.querySelectorAll('#interest-modal input[type="checkbox"]:checked');
+    const interests = Array.from(checkboxes).map(cb => cb.value);
+    
+    const result = await apiRequest('/api/profile/interests', 'POST', { interests });
+    if (result.success) {
+        const modal = document.getElementById('interest-modal');
+        if (modal) modal.remove();
+        showMessage('兴趣设置成功', 'success');
+    }
+}
+
+// 跳过兴趣选择
+async function skipInterests() {
+    const result = await apiRequest('/api/profile/interests', 'POST', { interests: [] });
+    if (result.success) {
+        const modal = document.getElementById('interest-modal');
+        if (modal) modal.remove();
+    }
+}
+
+// 页面加载时加载收藏
+document.addEventListener('DOMContentLoaded', () => {
+    loadFavorites();
+    loadMessages();
+    checkFirstLogin();
+});
+</script>
+{% endblock %}
+

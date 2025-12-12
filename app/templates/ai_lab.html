@@ -12,8 +12,8 @@
 
 <div class="container">
     <div class="lab-tabs">
-        <button class="tab-btn active" onclick="switchTab('playground')">AI 游乐场</button>
-        <button class="tab-btn" onclick="switchTab('insight')">模型透视</button>
+        <button class="tab-btn active" onclick="switchTab('playground', this)">AI 游乐场</button>
+        <button class="tab-btn" onclick="switchTab('insight', this)">模型透视</button>
     </div>
 
     <!-- AI 游乐场 -->
@@ -46,7 +46,7 @@
         <div class="insight-container">
             <h2>神经网络工作机制</h2>
             <div class="visualization-area">
-                <canvas id="neural-network-canvas" width="800" height="400"></canvas>
+                <canvas id="neural-network-canvas" width="1200" height="450"></canvas>
             </div>
             
             <div class="parameter-controls">
@@ -56,28 +56,65 @@
                     <span id="lr-value">0.01</span>
                 </div>
                 <div class="control-group">
-                    <label>隐藏层数：</label>
-                    <input type="range" id="hidden-layers" min="1" max="5" step="1" value="2">
-                    <span id="layers-value">2</span>
+                    <label>总层数（含输入输出）：</label>
+                    <input type="number" id="total-layers" min="3" max="10" value="4" style="width: 80px; padding: 0.3rem; text-align: center;">
+                    <small style="color: #666; margin-left: 0.5rem;">范围: 3-10</small>
+                </div>
+                <div class="control-group" style="flex-direction: column; align-items: flex-start; gap: 0.3rem;">
+                    <label style="margin-bottom: 0;">每层神经元数：</label>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+                        <input type="text" id="neurons-per-layer" placeholder="如: 4,6,6,2 或 4,6*2,2" value="4,6,6,2" style="flex: 1; max-width: 200px; padding: 0.3rem;">
+                        <small style="color: #666; font-size: 0.85rem;">格式: 4,6,6,2 或 4,6*2,2</small>
+                    </div>
                 </div>
                 <button onclick="updateVisualization()" class="btn btn-primary">更新可视化</button>
+            </div>
+            <div class="info-box" style="margin-top: 1rem; padding: 1rem; background: #E3F2FD; border-radius: 4px; font-size: 0.9rem;">
+                <strong>说明：</strong>神经网络通过多层神经元处理信息。每层的神经元接收前一层的信息，经过加权和激活函数处理后传递给下一层。连接线的颜色表示权重（绿色为正，红色为负），节点的大小反映激活值。
             </div>
 
             <div class="insight-sections">
                 <div class="insight-section">
                     <h3>卷积池化层</h3>
                     <p>卷积层通过卷积操作提取特征，池化层降低数据维度，提高计算效率。</p>
-                    <div class="demo-box">可视化演示区域</div>
+                    <div class="demo-box" style="min-height: 480px; width: 100%; overflow: visible;">
+                        <canvas id="conv-pool-canvas" width="900" height="450"></canvas>
+                        <div id="conv-explanation" class="demo-explanation" style="font-size: 0.85rem; color: #666; margin-top: 0.5rem; min-height: 40px;">
+                            点击"开始演示"查看卷积核如何滑动提取特征
+                        </div>
+                        <div class="demo-controls">
+                            <button onclick="startConvDemo()" class="btn-small">开始演示</button>
+                            <button onclick="resetConvDemo()" class="btn-small">重置</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="insight-section">
                     <h3>全连接网络</h3>
                     <p>全连接层将提取的特征映射到最终的输出空间，完成分类或回归任务。</p>
-                    <div class="demo-box">可视化演示区域</div>
+                    <div class="demo-box">
+                        <canvas id="fc-network-canvas" width="350" height="280"></canvas>
+                        <div id="fc-explanation" class="demo-explanation" style="font-size: 0.85rem; color: #666; margin-top: 0.5rem; min-height: 40px;">
+                            点击"开始演示"查看信号如何从前层传播到后层
+                        </div>
+                        <div class="demo-controls">
+                            <button onclick="startFCDemo()" class="btn-small">开始演示</button>
+                            <button onclick="resetFCDemo()" class="btn-small">重置</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="insight-section">
                     <h3>词向量空间</h3>
                     <p>词向量将词语映射到高维空间，语义相近的词在空间中距离更近。</p>
-                    <div class="demo-box">可视化演示区域</div>
+                    <div class="demo-box">
+                        <canvas id="word-vector-canvas" width="350" height="280"></canvas>
+                        <div id="word-vector-explanation" class="demo-explanation" style="font-size: 0.85rem; color: #666; margin-top: 0.5rem; min-height: 40px;">
+                            点击"开始演示"查看语义相近的词如何聚类
+                        </div>
+                        <div class="demo-controls">
+                            <button onclick="startWordVectorDemo()" class="btn-small">开始演示</button>
+                            <button onclick="resetWordVectorDemo()" class="btn-small">重置</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -196,6 +233,9 @@
     border-radius: 8px;
     padding: 2rem;
     box-shadow: var(--shadow);
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .visualization-area {
@@ -228,9 +268,24 @@
 
 .insight-sections {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: 1.2fr 1fr 1fr;
     gap: 2rem;
     margin-top: 2rem;
+}
+
+@media (max-width: 1400px) {
+    .insight-sections {
+        grid-template-columns: 1fr 1fr;
+    }
+    .insight-sections > .insight-section:first-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 900px) {
+    .insight-sections {
+        grid-template-columns: 1fr;
+    }
 }
 
 .insight-section {
@@ -240,15 +295,47 @@
 }
 
 .demo-box {
-    height: 200px;
+    min-height: 200px;
     background: white;
     border: 2px dashed var(--border-color);
     border-radius: 4px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     color: var(--text-light);
     margin-top: 1rem;
+    padding: 0.5rem;
+}
+
+.demo-box canvas {
+    border-radius: 4px;
+    background: #F8F9FA;
+}
+
+.demo-controls {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-small {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.85rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-small:hover {
+    background: var(--primary-dark);
+}
+
+.btn-small:active {
+    background: var(--primary-darker);
 }
 </style>
 {% endblock %}
@@ -301,7 +388,7 @@ function updateModelInfo(model) {
     }
 }
 
-function switchTab(tabName) {
+function switchTab(tabName, buttonElement) {
     // 隐藏所有标签页
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
@@ -311,8 +398,27 @@ function switchTab(tabName) {
     });
     
     // 显示选中的标签页
-    document.getElementById(tabName + '-tab').classList.add('active');
-    event.target.classList.add('active');
+    const tabElement = document.getElementById(tabName + '-tab');
+    if (tabElement) {
+        tabElement.classList.add('active');
+    }
+    
+    // 激活按钮
+    if (buttonElement) {
+        buttonElement.classList.add('active');
+    }
+    
+    // 如果切换到模型透视标签页，启动神经网络动画
+    if (tabName === 'insight' && neuralNetworkViz) {
+        setTimeout(() => {
+            if (neuralNetworkViz && !neuralNetworkViz.animationFrame) {
+                neuralNetworkViz.startAnimation();
+            }
+        }, 100);
+    } else if (tabName === 'playground' && neuralNetworkViz) {
+        // 切换到其他标签页时停止动画以节省性能
+        neuralNetworkViz.stopAnimation();
+    }
 }
 
 async function sendMessage() {
@@ -356,16 +462,1191 @@ function addMessage(role, content, isLoading = false) {
     return messageId;
 }
 
+// 神经网络可视化
+let neuralNetworkViz = null;
+
+function initNeuralNetwork() {
+    const canvas = document.getElementById('neural-network-canvas');
+    if (!canvas) return;
+    
+    // 调整canvas大小以适应容器
+    const container = canvas.parentElement;
+    canvas.width = Math.min(1200, Math.max(800, container.clientWidth - 40));
+    canvas.height = 450;
+    
+    neuralNetworkViz = new NeuralNetworkVisualizer(canvas);
+    updateNeuralNetwork();
+}
+
+function parseNeuronConfig(configStr, totalLayers) {
+    // 解析神经元配置，支持格式如: "4,6,6,2" 或 "4,6*2,2"
+    const parts = configStr.split(',');
+    const neurons = [];
+    
+    for (let part of parts) {
+        part = part.trim();
+        if (part.includes('*')) {
+            // 处理重复模式，如 "6*2" 表示两个6
+            const [num, count] = part.split('*').map(x => parseInt(x.trim()));
+            for (let i = 0; i < count; i++) {
+                neurons.push(num);
+            }
+        } else {
+            neurons.push(parseInt(part));
+        }
+    }
+    
+    // 如果配置的层数不够，用最后一层的数量填充
+    while (neurons.length < totalLayers) {
+        neurons.push(neurons[neurons.length - 1] || 6);
+    }
+    
+    // 如果配置的层数太多，截断
+    return neurons.slice(0, totalLayers);
+}
+
+function updateNeuralNetwork() {
+    if (!neuralNetworkViz) return;
+    
+    const lr = parseFloat(document.getElementById('learning-rate').value);
+    const totalLayers = parseInt(document.getElementById('total-layers').value);
+    const neuronsConfig = document.getElementById('neurons-per-layer').value;
+    
+    const neurons = parseNeuronConfig(neuronsConfig, totalLayers);
+    
+    neuralNetworkViz.setLearningRate(lr);
+    neuralNetworkViz.setLayers(neurons);
+    neuralNetworkViz.draw();
+}
+
 function updateVisualization() {
     const lr = document.getElementById('learning-rate').value;
-    const layers = document.getElementById('hidden-layers').value;
+    const totalLayers = document.getElementById('total-layers').value;
     
     // 更新显示值
     document.getElementById('lr-value').textContent = lr;
-    document.getElementById('layers-value').textContent = layers;
+    document.getElementById('total-layers-value').textContent = totalLayers;
     
-    // 这里应该更新可视化图表
-    showMessage('可视化已更新', 'success');
+    // 更新神经网络可视化
+    updateNeuralNetwork();
+}
+
+// 神经网络可视化类
+class NeuralNetworkVisualizer {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.layersConfig = [4, 6, 6, 2];
+        this.learningRate = 0.01;
+        this.nodes = [];
+        this.connections = [];
+        this.animationFrame = null;
+        this.animationStep = undefined;
+        this.maxVisibleLayers = 7; // 超过这个数量时显示省略号
+        this.layerSpacing = 120; // 层之间的间距（增加）
+        this.currentHighlightConnection = -1; // 当前高亮的连接索引
+        this.highlightAnimationFrame = 0; // 高亮动画帧数
+        this.initNetwork();
+        // 启动动画（延迟启动，确保页面加载完成，并且仅在模型透视标签页可见时）
+        setTimeout(() => {
+            const insightTab = document.getElementById('insight-tab');
+            if (insightTab && insightTab.classList.contains('active')) {
+                this.startAnimation();
+            }
+        }, 300);
+    }
+    
+    initNetwork() {
+        this.nodes = [];
+        this.connections = [];
+        
+        const totalLayers = this.layersConfig.length;
+        const shouldTruncate = totalLayers > this.maxVisibleLayers;
+        
+        // 确定要显示的层
+        let layersToShow = [];
+        if (shouldTruncate) {
+            // 显示前3层、省略号、后3层
+            const frontCount = 3;
+            const backCount = 3;
+            layersToShow = [
+                ...this.layersConfig.slice(0, frontCount),
+                null, // 省略号标记
+                ...this.layersConfig.slice(totalLayers - backCount)
+            ];
+        } else {
+            layersToShow = [...this.layersConfig];
+        }
+        
+        const visibleLayerCount = layersToShow.filter(l => l !== null).length;
+        // 调整起始位置，确保所有层都可见
+        const startX = 60;
+        const availableWidth = this.canvas.width - 120;
+        const totalSpacing = (visibleLayerCount - 1) * this.layerSpacing;
+        // 确保内容居中，但如果总宽度超过可用空间，则从左边开始
+        const baseX = totalSpacing < availableWidth 
+            ? startX + (availableWidth - totalSpacing) / 2 
+            : startX;
+        
+        // 存储省略号位置
+        this.ellipsisPos = null;
+        if (shouldTruncate) {
+            this.ellipsisPos = {
+                x: baseX + 3 * this.layerSpacing,
+                y: this.canvas.height / 2
+            };
+        }
+        
+        // 先创建所有实际的层（不跳过省略号）
+        const actualLayers = [];
+        this.layersConfig.forEach((layerSize, idx) => {
+            const layer = [];
+            const startY = (this.canvas.height - (layerSize - 1) * 40) / 2;
+            // 计算x位置（考虑省略号）
+            let x;
+            if (!shouldTruncate) {
+                const actualDisplayIndex = idx;
+                x = baseX + actualDisplayIndex * this.layerSpacing;
+            } else {
+                // 有省略号的情况
+                if (idx < 3) {
+                    // 前3层
+                    x = baseX + idx * this.layerSpacing;
+                } else if (idx >= totalLayers - 3) {
+                    // 后3层（跳过省略号）
+                    const displayIdx = idx - (totalLayers - 3) + 4; // 4 = 前3层 + 省略号位置
+                    x = baseX + displayIdx * this.layerSpacing;
+                } else {
+                    // 中间被省略的层（不显示，但用于连接计算）
+                    x = -1000; // 隐藏位置
+                }
+            }
+            
+            for (let i = 0; i < layerSize; i++) {
+                const node = {
+                    x: x,
+                    y: startY + i * 40,
+                    value: Math.random(),
+                    layer: idx,
+                    displayIndex: idx
+                };
+                layer.push(node);
+            }
+            actualLayers.push(layer);
+        });
+        
+        // 只将可见的层添加到this.nodes
+        actualLayers.forEach((layer, idx) => {
+            // 如果是被省略的层（x坐标为负），不添加到显示列表
+            if (layer[0].x >= 0) {
+                this.nodes.push(layer);
+            }
+        });
+        
+        // 建立连接（在所有实际层之间，包括被省略的层）
+        actualLayers.forEach((layer, layerIdx) => {
+            if (layerIdx === 0) return; // 第一层没有前一层
+            
+            const prevLayer = actualLayers[layerIdx - 1];
+            layer.forEach(node => {
+                prevLayer.forEach(prevNode => {
+                    // 只有当前节点和前一节点都可见时才绘制连接
+                    if (node.x >= 0 && prevNode.x >= 0) {
+                        this.connections.push({
+                            from: prevNode,
+                            to: node,
+                            weight: Math.random() * 2 - 1
+                        });
+                    }
+                });
+            });
+        });
+        
+        // 不在这里调用draw，让动画循环来处理
+        // 如果动画未运行，则绘制静态版本
+        if (!this.animationFrame) {
+            this.draw();
+        }
+    }
+    
+    setLayers(layersConfig) {
+        this.stopAnimation(); // 停止旧动画
+        this.layersConfig = layersConfig;
+        this.initNetwork(); // 重新初始化
+        // 重新启动动画
+        setTimeout(() => this.startAnimation(), 50);
+    }
+    
+    setLearningRate(lr) {
+        this.learningRate = lr;
+    }
+    
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // 绘制连接（加深颜色）
+        this.connections.forEach((conn, index) => {
+            // 判断是否高亮当前连接
+            const isHighlighted = index === this.currentHighlightConnection;
+            
+            let alpha, lineWidth, color;
+            if (isHighlighted) {
+                // 高亮连接：使用更亮的颜色和更粗的线条
+                alpha = 1.0;
+                lineWidth = Math.max(4, Math.abs(conn.weight) * 3);
+                color = conn.weight > 0 ? `rgba(76, 175, 80, ${alpha})` : `rgba(244, 67, 54, ${alpha})`;
+            } else {
+                // 普通连接：使用正常颜色，保持可见度
+                alpha = Math.abs(conn.weight) * 0.6 + 0.3; // 提高非高亮连接的可见度（0.3-0.9）
+                lineWidth = Math.abs(conn.weight) * 1.5 + 0.5; // 稍微增加线宽
+                color = conn.weight > 0 ? `rgba(76, 175, 80, ${alpha})` : `rgba(244, 67, 54, ${alpha})`;
+            }
+            
+            this.ctx.strokeStyle = color;
+            this.ctx.lineWidth = lineWidth;
+            this.ctx.beginPath();
+            this.ctx.moveTo(conn.from.x, conn.from.y);
+            this.ctx.lineTo(conn.to.x, conn.to.y);
+            this.ctx.stroke();
+            
+            // 如果是高亮连接，添加额外的发光效果
+            if (isHighlighted) {
+                this.ctx.shadowBlur = 10;
+                this.ctx.shadowColor = conn.weight > 0 ? 'rgba(76, 175, 80, 0.8)' : 'rgba(244, 67, 54, 0.8)';
+                this.ctx.stroke();
+                this.ctx.shadowBlur = 0;
+            }
+        });
+        
+        // 绘制省略号（如果有）
+        if (this.ellipsisPos) {
+            this.ctx.fillStyle = '#666';
+            this.ctx.font = 'bold 20px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('...', this.ellipsisPos.x, this.ellipsisPos.y);
+        }
+        
+        // 绘制节点
+        this.nodes.forEach((layer, layerIdx) => {
+            if (!layer) return;
+            layer.forEach(node => {
+                if (!node) return;
+                
+                const isFirstLayer = node.layer === 0;
+                const isLastLayer = node.layer === this.layersConfig.length - 1;
+                
+                // 节点圆圈
+                const gradient = this.ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, 12);
+                gradient.addColorStop(0, isFirstLayer ? '#2196F3' : isLastLayer ? '#FF9800' : '#9C27B0');
+                gradient.addColorStop(1, isFirstLayer ? '#1976D2' : isLastLayer ? '#F57C00' : '#7B1FA2');
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.beginPath();
+                this.ctx.arc(node.x, node.y, 12, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+            });
+        });
+        
+        // 绘制脉冲效果（如果有动画步骤）
+        if (this.animationStep !== undefined) {
+            this.nodes.forEach((layer) => {
+                if (!layer) return;
+                layer.forEach(node => {
+                    if (!node) return;
+                    const pulse = Math.sin(this.animationStep * 0.05 + node.layer * 0.5) * 0.3 + 0.7;
+                    this.drawNodePulse(node, pulse);
+                });
+            });
+        }
+    }
+    
+    startAnimation() {
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+        }
+        
+        // 检查canvas是否可见
+        if (!this.canvas || !this.canvas.offsetParent) {
+            return; // canvas不可见，不启动动画
+        }
+        
+        this.animationStep = 0;
+        this.currentHighlightConnection = -1; // 初始化高亮连接索引
+        this.highlightAnimationFrame = 0; // 初始化高亮动画帧数
+        let lastTime = performance.now();
+        const animate = (currentTime) => {
+            // 限制帧率，每16ms（约60fps）更新一次
+            if (currentTime - lastTime < 16) {
+                this.animationFrame = requestAnimationFrame(animate);
+                return;
+            }
+            lastTime = currentTime;
+            
+            // 更新高亮连接索引（逐条高亮，加快速度）
+            this.highlightAnimationFrame++;
+            if (this.highlightAnimationFrame % 5 === 0 && this.connections.length > 0) { // 每5帧切换一次高亮，加快速度
+                this.currentHighlightConnection++;
+                if (this.currentHighlightConnection >= this.connections.length) {
+                    this.currentHighlightConnection = 0; // 循环
+                }
+            }
+            
+            // 检查canvas是否仍然可见
+            if (!this.canvas || !this.canvas.offsetParent) {
+                this.stopAnimation();
+                return;
+            }
+            
+            this.draw(); // 重绘整个网络（包含脉冲效果和高亮连接）
+            this.animationStep++;
+            this.animationFrame = requestAnimationFrame(animate);
+        };
+        
+        this.animationFrame = requestAnimationFrame(animate);
+    }
+    
+    stopAnimation() {
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
+        }
+        this.animationStep = undefined;
+        this.draw(); // 绘制静态版本
+    }
+    
+    drawNodePulse(node, intensity) {
+        const radius = 12 + intensity * 4;
+        const isFirstLayer = node.layer === 0;
+        const isLastLayer = node.layer === this.layersConfig.length - 1;
+        const baseColor = isFirstLayer ? '#2196F3' : isLastLayer ? '#FF9800' : '#9C27B0';
+        
+        const gradient = this.ctx.createRadialGradient(node.x, node.y, 12, node.x, node.y, radius);
+        gradient.addColorStop(0, baseColor + '88');
+        gradient.addColorStop(1, 'transparent');
+        
+        this.ctx.fillStyle = gradient;
+        this.ctx.beginPath();
+        this.ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+        this.ctx.fill();
+    }
+}
+
+// 卷积池化层可视化
+let convPoolDemo = null;
+
+function initConvPoolDemo() {
+    const canvas = document.getElementById('conv-pool-canvas');
+    if (!canvas) return;
+    convPoolDemo = new ConvPoolVisualizer(canvas);
+}
+
+function startConvDemo() {
+    if (convPoolDemo) {
+        convPoolDemo.start();
+    }
+}
+
+function resetConvDemo() {
+    if (convPoolDemo) {
+        convPoolDemo.reset();
+    }
+}
+
+class ConvPoolVisualizer {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.gridSize = 8;
+        // 重新计算cellSize以适应更大的canvas和布局（900x450）
+        // 需要容纳：输入图(8x8) + 特征图(6x6) + 池化图(3x3) + 卷积核(3x3) + 间距 + 标签
+        // 宽度方向：左边距1 + 输入图8格 + 间距3 + 特征图6格 + 间距3 + 池化图3格 + 右边距1 = 约25格
+        // 高度方向：上边距2（标签）+ 输入图8格 + 间距2 + 卷积核3格 + 下边距1 = 约16格
+        this.cellSize = Math.min(Math.floor(canvas.width / 26), Math.floor(canvas.height / 17), 30);
+        this.kernelSize = 3;
+        this.isAnimating = false;
+        this.frame = 0;
+        this.currentPosition = { row: 0, col: 0 }; // 当前卷积核位置
+        this.currentPoolPosition = { row: 0, col: 0 }; // 当前池化位置
+        this.stage = 'conv'; // 'conv' 或 'pool'
+        this.explanationEl = document.getElementById('conv-explanation');
+        this.reset();
+    }
+    
+    reset() {
+        this.frame = 0;
+        this.isAnimating = false;
+        this.currentPosition = { row: 0, col: 0 };
+        this.stage = 'conv';
+        this.updateExplanation('点击"开始演示"查看卷积核如何滑动提取特征');
+        this.draw();
+    }
+    
+    start() {
+        this.isAnimating = true;
+        this.frame = 0;
+        this.currentPosition = { row: 0, col: 0 };
+        this.stage = 'conv';
+        this.animate();
+    }
+    
+    animate() {
+        if (!this.isAnimating) return;
+        
+        this.draw();
+        this.frame++;
+        
+        // 进一步减慢动画速度：每15帧更新一次
+        if (this.frame % 15 !== 0) {
+            requestAnimationFrame(() => this.animate());
+            return;
+        }
+        
+        const featureSize = this.gridSize - this.kernelSize + 1;
+        const totalConvSteps = featureSize * featureSize;
+        const currentStep = Math.floor(this.frame / 15);
+        
+        if (this.stage === 'conv' && currentStep < totalConvSteps) {
+            // 卷积阶段
+            this.currentPosition.row = Math.floor(currentStep / featureSize);
+            this.currentPosition.col = currentStep % featureSize;
+            
+            const progress = Math.min(1, currentStep / totalConvSteps);
+            this.updateExplanation(`卷积进行中... (${Math.floor(progress * 100)}%) 卷积核正在扫描图像提取特征`);
+            
+            if (currentStep >= totalConvSteps - 1) {
+                // 卷积完成，切换到池化
+                setTimeout(() => {
+                    this.stage = 'pool';
+                    this.frame = 0;
+                    this.currentPoolPosition = { row: 0, col: 0 };
+                }, 800);
+            }
+        } else if (this.stage === 'pool') {
+            const poolSize = Math.floor(featureSize / 2);
+            const totalPoolSteps = poolSize * poolSize;
+            const poolStartFrame = totalConvSteps * 15;
+            const poolStep = Math.floor((this.frame - poolStartFrame) / 20); // 更慢的池化速度
+            
+            if (poolStep < totalPoolSteps) {
+                this.currentPoolPosition.row = Math.floor(poolStep / poolSize);
+                this.currentPoolPosition.col = poolStep % poolSize;
+                const progress = Math.min(1, poolStep / totalPoolSteps);
+                this.updateExplanation(`池化进行中... (${Math.floor(progress * 100)}%) 对2x2区域进行最大池化，取最大值作为输出`);
+            } else {
+                this.updateExplanation('完成！通过卷积提取特征，通过池化降低维度，提高计算效率');
+                this.isAnimating = false;
+            }
+        }
+        
+        requestAnimationFrame(() => this.animate());
+    }
+    
+    updateExplanation(text) {
+        if (this.explanationEl) {
+            this.explanationEl.textContent = text;
+        }
+    }
+    
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // 调整布局以适应更大的canvas，并保持合理的间距，为标签留出足够空间
+        // 输入图像位置（增加上边距以容纳标签）
+        const inputX = 1;
+        const inputY = 2.2; // 增加上边距，为标签留出空间
+        // 特征图位置（输入图像右侧）
+        const featureSize = this.gridSize - this.kernelSize + 1; // 8-3+1=6
+        const featureX = this.gridSize + 3; // 输入图右侧，留出更多间距
+        const featureY = 2.2; // 与输入图对齐
+        // 池化图位置（特征图右侧）
+        const pooledSize = Math.floor(featureSize / 2); // 6/2=3
+        const pooledX = this.gridSize + featureSize + 5.5; // 特征图右侧，留出更多间距
+        const pooledY = 2.2; // 与特征图对齐
+        
+        // 绘制输入图像（8x8网格）
+        this.drawGrid(inputX, inputY, this.gridSize, '输入图像 (8×8)', this.getInputPattern());
+        
+        // 绘制卷积核参考（在左侧独立显示）
+        this.drawKernelReference();
+        
+        // 绘制移动的卷积核高亮（在输入图像上）
+        this.drawMovingKernel(inputX, inputY);
+        
+        // 绘制特征图（卷积后的结果 6x6）
+        this.drawGrid(featureX, featureY, featureSize, `特征图 (${featureSize}×${featureSize})`, this.getFeatureMap());
+        
+        // 绘制池化过程（如果有）
+        this.drawPoolingProcess(featureX, featureY, featureSize, pooledX, pooledY, pooledSize);
+        
+        // 绘制池化后的结果（3x3）
+        this.drawGrid(pooledX, pooledY, pooledSize, `池化后 (${pooledSize}×${pooledSize})`, this.getPooledMap(pooledSize));
+    }
+    
+    drawKernelReference() {
+        // 在输入图像下方独立显示卷积核（作为参考）
+        const kernelX = 1;
+        const kernelY = this.gridSize + 3; // 在输入图像下方，增加间距
+        this.drawKernel(kernelX, kernelY, '卷积核 (3×3)');
+    }
+    
+    drawPoolingProcess(featureX, featureY, featureSize, pooledX, pooledY, pooledSize) {
+        if (this.stage !== 'pool' || !this.isAnimating) return;
+        
+        // 绘制池化过程中的高亮区域
+        const poolRow = this.currentPoolPosition.row;
+        const poolCol = this.currentPoolPosition.col;
+        
+        // 在特征图上高亮2x2池化区域（正确计算位置，与drawGrid的绘制逻辑一致）
+        const featureStartX = featureX * this.cellSize;
+        const featureStartY = featureY * this.cellSize; // 修正：网格从startY开始，不是startY+1
+        const highlightX = featureStartX + poolCol * 2 * this.cellSize;
+        const highlightY = featureStartY + poolRow * 2 * this.cellSize;
+        const highlightSize = 2 * this.cellSize;
+        
+        // 绘制高亮边框（橙色，表示池化区域）
+        this.ctx.strokeStyle = '#FF9800';
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(highlightX, highlightY, highlightSize, highlightSize);
+        
+        // 绘制半透明覆盖层
+        this.ctx.fillStyle = 'rgba(255, 152, 0, 0.2)';
+        this.ctx.fillRect(highlightX, highlightY, highlightSize, highlightSize);
+        
+        // 在池化区域内显示最大值标记（最大池化）
+        const featureMap = this.getFeatureMap();
+        let maxVal = 0;
+        let maxPos = {x: 0, y: 0};
+        for (let pi = 0; pi < 2; pi++) {
+            for (let pj = 0; pj < 2; pj++) {
+                const idx = (poolRow * 2 + pi) * featureSize + (poolCol * 2 + pj);
+                if (idx < featureMap.length && featureMap[idx] > maxVal) {
+                    maxVal = featureMap[idx];
+                    maxPos = {
+                        x: highlightX + pj * this.cellSize + this.cellSize / 2,
+                        y: highlightY + pi * this.cellSize + this.cellSize / 2
+                    };
+                }
+            }
+        }
+        // 标记最大值（用橙色圆圈）
+        this.ctx.fillStyle = '#FF9800';
+        this.ctx.beginPath();
+        this.ctx.arc(maxPos.x, maxPos.y, 5, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.strokeStyle = '#FFF';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.stroke();
+        
+        // 绘制箭头从最大值位置指向池化结果的对应位置
+        const arrowStartX = maxPos.x;
+        const arrowStartY = maxPos.y;
+        const pooledStartX = pooledX * this.cellSize;
+        const pooledStartY = pooledY * this.cellSize; // 修正：使用pooledY而不是固定值
+        const arrowEndX = pooledStartX + poolCol * this.cellSize + this.cellSize / 2;
+        const arrowEndY = pooledStartY + poolRow * this.cellSize;
+        
+        // 绘制箭头线
+        this.ctx.strokeStyle = '#FF9800';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(arrowStartX, arrowStartY);
+        this.ctx.lineTo(arrowEndX, arrowEndY);
+        this.ctx.stroke();
+        
+        // 绘制箭头头部
+        const angle = Math.atan2(arrowEndY - arrowStartY, arrowEndX - arrowStartX);
+        const arrowLength = 8;
+        this.ctx.beginPath();
+        this.ctx.moveTo(arrowEndX, arrowEndY);
+        this.ctx.lineTo(arrowEndX - arrowLength * Math.cos(angle - Math.PI / 6), 
+                       arrowEndY - arrowLength * Math.sin(angle - Math.PI / 6));
+        this.ctx.moveTo(arrowEndX, arrowEndY);
+        this.ctx.lineTo(arrowEndX - arrowLength * Math.cos(angle + Math.PI / 6), 
+                       arrowEndY - arrowLength * Math.sin(angle + Math.PI / 6));
+        this.ctx.stroke();
+        
+        // 高亮池化结果中当前处理的位置
+        const pooledX_pos = pooledStartX + poolCol * this.cellSize;
+        const pooledY_pos = pooledStartY + poolRow * this.cellSize;
+        this.ctx.strokeStyle = '#FF9800';
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(pooledX_pos, pooledY_pos, this.cellSize - 1, this.cellSize - 1);
+    }
+    
+    drawMovingKernel(baseX, baseY) {
+        // 在输入图像上绘制移动的卷积核高亮区域
+        if (!this.isAnimating || this.stage !== 'conv') return;
+        
+        // 计算卷积核在输入图像上的位置（卷积核滑动的位置）
+        const highlightX = (baseX + this.currentPosition.col) * this.cellSize;
+        const highlightY = (baseY + 1 + this.currentPosition.row) * this.cellSize;
+        const highlightSize = this.kernelSize * this.cellSize;
+        
+        // 绘制高亮边框（红色，表示当前卷积位置）
+        this.ctx.strokeStyle = '#FF5722';
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(highlightX, highlightY, highlightSize, highlightSize);
+        
+        // 绘制半透明覆盖层
+        this.ctx.fillStyle = 'rgba(255, 87, 34, 0.15)';
+        this.ctx.fillRect(highlightX, highlightY, highlightSize, highlightSize);
+        
+        // 绘制箭头从卷积核区域指向特征图的对应位置
+        const arrowStartX = highlightX + highlightSize / 2;
+        const arrowStartY = highlightY + highlightSize;
+        const featureStartX = (this.gridSize + 3) * this.cellSize;
+        const featureStartY = 2.2 * this.cellSize; // 修正：网格从startY开始，不是startY+1
+        const arrowEndX = featureStartX + (this.currentPosition.col + 0.5) * this.cellSize;
+        const arrowEndY = featureStartY + this.currentPosition.row * this.cellSize;
+        
+        // 绘制箭头线
+        this.ctx.strokeStyle = '#FF5722';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(arrowStartX, arrowStartY);
+        this.ctx.lineTo(arrowEndX, arrowEndY);
+        this.ctx.stroke();
+        
+        // 绘制箭头头部
+        const angle = Math.atan2(arrowEndY - arrowStartY, arrowEndX - arrowStartX);
+        const arrowLength = 8;
+        this.ctx.beginPath();
+        this.ctx.moveTo(arrowEndX, arrowEndY);
+        this.ctx.lineTo(arrowEndX - arrowLength * Math.cos(angle - Math.PI / 6), 
+                       arrowEndY - arrowLength * Math.sin(angle - Math.PI / 6));
+        this.ctx.moveTo(arrowEndX, arrowEndY);
+        this.ctx.lineTo(arrowEndX - arrowLength * Math.cos(angle + Math.PI / 6), 
+                       arrowEndY - arrowLength * Math.sin(angle + Math.PI / 6));
+        this.ctx.stroke();
+        
+        // 高亮特征图中当前计算的位置
+        const featureHighlightX = featureStartX + this.currentPosition.col * this.cellSize;
+        const featureHighlightY = featureStartY + this.currentPosition.row * this.cellSize;
+        this.ctx.strokeStyle = '#FF5722';
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(featureHighlightX, featureHighlightY, this.cellSize - 1, this.cellSize - 1);
+    }
+    
+    drawGrid(startX, startY, size, label, pattern) {
+        // 绘制标签（确保标签完整显示）
+        this.ctx.fillStyle = '#333';
+        this.ctx.font = '11px Arial';
+        this.ctx.textAlign = 'left';
+        this.ctx.textBaseline = 'bottom';
+        // 标签位置：稍微向左偏移，确保文字不被截断
+        const labelX = Math.max(5, startX * this.cellSize - 2);
+        const labelY = startY * this.cellSize - 8;
+        this.ctx.fillText(label, labelX, labelY);
+        
+        // 绘制网格
+        for (let i = 0; i < size; i++) {
+            for (let j = 0; j < size; j++) {
+                const x = (startX + j) * this.cellSize;
+                const y = (startY + i) * this.cellSize;
+                
+                const value = pattern ? pattern[i * size + j] : Math.random();
+                const intensity = Math.max(0, Math.min(1, value));
+                
+                this.ctx.fillStyle = `rgba(33, 150, 243, ${intensity})`;
+                this.ctx.fillRect(x, y, this.cellSize - 1, this.cellSize - 1);
+                
+                this.ctx.strokeStyle = '#E0E0E0';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(x, y, this.cellSize - 1, this.cellSize - 1);
+            }
+        }
+    }
+    
+    drawKernel(startX, startY, label = '卷积核') {
+        // 绘制标签（确保标签完整显示）
+        this.ctx.fillStyle = '#333';
+        this.ctx.font = '11px Arial';
+        this.ctx.textAlign = 'left';
+        this.ctx.textBaseline = 'bottom';
+        // 标签位置：稍微向左偏移，确保文字不被截断
+        const labelX = Math.max(5, startX * this.cellSize - 2);
+        const labelY = startY * this.cellSize - 8;
+        this.ctx.fillText(label, labelX, labelY);
+        
+        for (let i = 0; i < this.kernelSize; i++) {
+            for (let j = 0; j < this.kernelSize; j++) {
+                const x = (startX + j) * this.cellSize;
+                const y = (startY + i) * this.cellSize;
+                
+                const kernel = [1, 0, -1, 0, 0, 0, -1, 0, 1];
+                const value = kernel[i * this.kernelSize + j];
+                const intensity = value > 0 ? 0.8 : value < 0 ? 0.3 : 0.5;
+                
+                this.ctx.fillStyle = value > 0 ? `rgba(76, 175, 80, ${intensity})` : 
+                                    value < 0 ? `rgba(244, 67, 54, ${intensity})` : '#E0E0E0';
+                this.ctx.fillRect(x, y, this.cellSize - 1, this.cellSize - 1);
+                
+                // 显示数值
+                this.ctx.fillStyle = '#333';
+                this.ctx.font = '7px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(value.toString(), x + this.cellSize / 2, y + this.cellSize / 2 + 2);
+            }
+        }
+    }
+    
+    getInputPattern() {
+        // 创建一个简单的输入模式（边缘检测示例）
+        const pattern = Array(this.gridSize * this.gridSize).fill(0.2);
+        // 添加一些特征
+        for (let i = 2; i < 6; i++) {
+            for (let j = 2; j < 6; j++) {
+                pattern[i * this.gridSize + j] = 0.8;
+            }
+        }
+        return pattern;
+    }
+    
+    getFeatureMap() {
+        const size = this.gridSize - this.kernelSize + 1;
+        const featureMap = [];
+        const input = this.getInputPattern();
+        
+        for (let i = 0; i < size; i++) {
+            for (let j = 0; j < size; j++) {
+                let sum = 0;
+                const kernel = [1, 0, -1, 0, 0, 0, -1, 0, 1];
+                
+                for (let ki = 0; ki < this.kernelSize; ki++) {
+                    for (let kj = 0; kj < this.kernelSize; kj++) {
+                        const inputIdx = (i + ki) * this.gridSize + (j + kj);
+                        const kernelIdx = ki * this.kernelSize + kj;
+                        sum += input[inputIdx] * kernel[kernelIdx];
+                    }
+                }
+                
+                // 根据当前卷积位置决定是否显示结果
+                const isComputed = !this.isAnimating || 
+                    this.stage === 'pool' || 
+                    (this.stage === 'conv' && 
+                     (i < this.currentPosition.row || 
+                      (i === this.currentPosition.row && j <= this.currentPosition.col)));
+                
+                let value = Math.max(0, Math.min(1, sum * 0.3 + 0.5));
+                
+                // 如果正在计算当前位置，添加高亮效果
+                if (this.isAnimating && this.stage === 'conv' && 
+                    i === this.currentPosition.row && j === this.currentPosition.col) {
+                    const progress = (this.frame % 3) / 3;
+                    value = value * 0.7 + 0.3 * progress;
+                }
+                
+                featureMap.push(isComputed ? value : 0.1);
+            }
+        }
+        
+        return featureMap;
+    }
+    
+    getPooledMap(pooledSize) {
+        const featureSize = this.gridSize - this.kernelSize + 1;
+        const featureMap = this.getFeatureMap();
+        const pooledMap = [];
+        
+        for (let i = 0; i < pooledSize; i++) {
+            for (let j = 0; j < pooledSize; j++) {
+                // 最大池化
+                let maxVal = 0;
+                for (let pi = 0; pi < 2; pi++) {
+                    for (let pj = 0; pj < 2; pj++) {
+                        const idx = (i * 2 + pi) * featureSize + (j * 2 + pj);
+                        if (idx < featureMap.length) {
+                            maxVal = Math.max(maxVal, featureMap[idx]);
+                        }
+                    }
+                }
+                
+                // 根据池化进度决定是否显示
+                const isPooled = !this.isAnimating || 
+                    this.stage === 'conv' ||
+                    (this.stage === 'pool' && 
+                     (i < this.currentPoolPosition.row || 
+                      (i === this.currentPoolPosition.row && j <= this.currentPoolPosition.col)));
+                
+                pooledMap.push(isPooled ? maxVal : 0.1);
+            }
+        }
+        
+        return pooledMap;
+    }
+}
+
+// 全连接网络可视化
+let fcNetworkDemo = null;
+
+function initFCNetworkDemo() {
+    const canvas = document.getElementById('fc-network-canvas');
+    if (!canvas) return;
+    fcNetworkDemo = new FCNetworkVisualizer(canvas);
+}
+
+function startFCDemo() {
+    if (fcNetworkDemo) {
+        fcNetworkDemo.start();
+    }
+}
+
+function resetFCDemo() {
+    if (fcNetworkDemo) {
+        fcNetworkDemo.reset();
+    }
+}
+
+class FCNetworkVisualizer {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.isAnimating = false;
+        this.frame = 0;
+        this.layers = [4, 6, 4, 2];
+        this.explanationEl = document.getElementById('fc-explanation');
+        this.reset();
+    }
+    
+    reset() {
+        this.frame = 0;
+        this.isAnimating = false;
+        this.updateExplanation('点击"开始演示"查看信号如何从前层传播到后层');
+        this.draw();
+    }
+    
+    start() {
+        this.isAnimating = true;
+        this.frame = 0;
+        this.animate();
+    }
+    
+    animate() {
+        if (!this.isAnimating) return;
+        
+        // 进一步减慢动画：每6帧更新一次
+        if (this.frame % 6 !== 0) {
+            this.frame++;
+            requestAnimationFrame(() => this.animate());
+            return;
+        }
+        
+        this.draw();
+        
+        // 计算当前连接的进度
+        const totalConnections = this.getTotalConnections();
+        const currentConnection = Math.floor(this.frame / 6);
+        
+        if (currentConnection < totalConnections) {
+            const progress = Math.min(1, currentConnection / totalConnections);
+            this.updateExplanation(`连接建立中... (${Math.floor(progress * 100)}%) 神经元之间逐步建立连接`);
+        } else {
+            this.updateExplanation('完成！所有神经元之间的连接已建立，网络可以开始处理信息');
+            this.isAnimating = false;
+        }
+        
+        this.frame++;
+        
+        if (this.frame < totalConnections * 6 + 50) {
+            requestAnimationFrame(() => this.animate());
+        } else {
+            this.isAnimating = false;
+        }
+    }
+    
+    getTotalConnections() {
+        let total = 0;
+        for (let i = 1; i < this.layers.length; i++) {
+            total += this.layers[i - 1] * this.layers[i];
+        }
+        return total;
+    }
+    
+    updateExplanation(text) {
+        if (this.explanationEl) {
+            this.explanationEl.textContent = text;
+        }
+    }
+    
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        const layerWidth = this.canvas.width / (this.layers.length + 1);
+        const nodes = [];
+        
+        // 创建节点
+        this.layers.forEach((size, layerIdx) => {
+            const layer = [];
+            const startY = (this.canvas.height - (size - 1) * 25) / 2;
+            const x = layerWidth * (layerIdx + 1);
+            
+            for (let i = 0; i < size; i++) {
+                layer.push({ x, y: startY + i * 25, layer: layerIdx, index: i });
+            }
+            nodes.push(layer);
+        });
+        
+        // 计算当前应该显示的连接数（一条一条地显示）
+        const currentConnectionIndex = this.isAnimating ? Math.floor(this.frame / 6) : this.getTotalConnections();
+        let connectionCount = 0;
+        
+        // 绘制连接（一条一条地）
+        for (let layerIdx = 1; layerIdx < nodes.length; layerIdx++) {
+            nodes[layerIdx - 1].forEach((fromNode, fromIdx) => {
+                nodes[layerIdx].forEach((toNode, toIdx) => {
+                    connectionCount++;
+                    
+                    // 只绘制已建立的连接
+                    if (connectionCount <= currentConnectionIndex) {
+                        const alpha = 0.3;
+                        this.ctx.strokeStyle = `rgba(33, 150, 243, ${alpha})`;
+                        this.ctx.lineWidth = 0.8;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(fromNode.x, fromNode.y);
+                        this.ctx.lineTo(toNode.x, toNode.y);
+                        this.ctx.stroke();
+                        
+                        // 如果是最后一条连接，添加高亮效果
+                        if (this.isAnimating && connectionCount === currentConnectionIndex) {
+                            this.ctx.strokeStyle = 'rgba(255, 152, 0, 0.8)';
+                            this.ctx.lineWidth = 2;
+                            this.ctx.stroke();
+                        }
+                    }
+                });
+            });
+        }
+        
+        // 计算每层开始的连接索引
+        const layerStartIndices = [0];
+        for (let i = 0; i < this.layers.length - 1; i++) {
+            layerStartIndices.push(layerStartIndices[i] + this.layers[i] * this.layers[i + 1]);
+        }
+        
+        // 绘制节点
+        nodes.forEach((layer, layerIdx) => {
+            const layerStartIndex = layerStartIndices[layerIdx];
+            const isLayerActive = currentConnectionIndex >= layerStartIndex;
+            
+            layer.forEach(node => {
+                const intensity = isLayerActive ? 0.8 : 0.4;
+                const radius = isLayerActive ? 6 : 4;
+                
+                // 节点
+                this.ctx.fillStyle = `rgba(33, 150, 243, ${intensity})`;
+                this.ctx.beginPath();
+                this.ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                this.ctx.strokeStyle = '#1976D2';
+                this.ctx.lineWidth = 1.5;
+                this.ctx.stroke();
+            });
+        });
+    }
+}
+
+// 词向量空间可视化
+let wordVectorDemo = null;
+
+function initWordVectorDemo() {
+    const canvas = document.getElementById('word-vector-canvas');
+    if (!canvas) return;
+    wordVectorDemo = new WordVectorVisualizer(canvas);
+}
+
+function startWordVectorDemo() {
+    if (wordVectorDemo) {
+        wordVectorDemo.start();
+    }
+}
+
+function resetWordVectorDemo() {
+    if (wordVectorDemo) {
+        wordVectorDemo.reset();
+    }
+}
+
+class WordVectorVisualizer {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.isAnimating = false;
+        this.frame = 0;
+        this.explanationEl = document.getElementById('word-vector-explanation');
+        
+        // 定义一些词及其关系
+        this.words = [
+            { word: 'AI', x: 0, y: 0, group: 0 },
+            { word: '机器学习', x: 0, y: 0, group: 0 },
+            { word: '深度学习', x: 0, y: 0, group: 0 },
+            { word: '神经网络', x: 0, y: 0, group: 0 },
+            { word: '算法', x: 0, y: 0, group: 1 },
+            { word: '模型', x: 0, y: 0, group: 1 },
+            { word: '训练', x: 0, y: 0, group: 1 },
+            { word: '数据', x: 0, y: 0, group: 2 },
+            { word: '特征', x: 0, y: 0, group: 2 },
+            { word: '样本', x: 0, y: 0, group: 2 }
+        ];
+        
+        this.colors = ['#2196F3', '#4CAF50', '#FF9800'];
+        this.reset();
+    }
+    
+    reset() {
+        this.frame = 0;
+        this.isAnimating = false;
+        this.updateExplanation('点击"开始演示"查看语义相近的词如何聚类');
+        this.initPositions();
+        this.draw();
+    }
+    
+    updateExplanation(text) {
+        if (this.explanationEl) {
+            this.explanationEl.textContent = text;
+        }
+    }
+    
+    initPositions() {
+        // 初始化位置（随机分布在画布上）
+        this.words.forEach(word => {
+            word.x = Math.random() * (this.canvas.width - 60) + 30;
+            word.y = Math.random() * (this.canvas.height - 40) + 20;
+            word.targetX = word.x;
+            word.targetY = word.y;
+        });
+        
+        // 根据组别设置目标位置（同组词聚集在一起）
+        const groups = [[], [], []];
+        this.words.forEach(word => groups[word.group].push(word));
+        
+        groups.forEach((group, groupIdx) => {
+            // 增加组之间的距离，使聚类更明显
+            const centerX = (this.canvas.width / 3) * (groupIdx + 0.5);
+            const centerY = this.canvas.height / 2;
+            const radius = 25; // 减小组内半径，使同组词更紧密
+            
+            group.forEach((word, idx) => {
+                const angle = (idx / group.length) * Math.PI * 2;
+                // 添加一些随机偏移，但保持紧凑
+                const offsetX = (Math.random() - 0.5) * 15;
+                const offsetY = (Math.random() - 0.5) * 15;
+                word.targetX = centerX + Math.cos(angle) * radius + offsetX;
+                word.targetY = centerY + Math.sin(angle) * radius + offsetY;
+            });
+        });
+    }
+    
+    start() {
+        this.isAnimating = true;
+        this.frame = 0;
+        this.initPositions();
+        this.updateExplanation('词向量学习中... 语义相近的词逐渐聚集在一起');
+        this.animate();
+    }
+    
+    animate() {
+        if (!this.isAnimating) return;
+        
+        // 减慢动画：每2帧更新一次，使用更慢的移动速度
+        if (this.frame % 2 !== 0) {
+            this.frame++;
+            requestAnimationFrame(() => this.animate());
+            return;
+        }
+        
+        // 平滑移动到目标位置（减慢速度）
+        const progress = Math.min(1, this.frame / 200);
+        const easeT = progress * (2 - progress); // 缓动函数
+        
+        this.words.forEach(word => {
+            word.x = word.x + (word.targetX - word.x) * 0.05; // 减慢移动速度
+            word.y = word.y + (word.targetY - word.y) * 0.05;
+        });
+        
+        // 更新说明
+        if (progress < 0.5) {
+            this.updateExplanation(`词向量学习中... (${Math.floor(progress * 100)}%) 语义相近的词逐渐聚集`);
+        } else if (progress < 0.9) {
+            this.updateExplanation(`聚类完成中... (${Math.floor(progress * 100)}%) 同组词形成紧密的语义簇`);
+        } else {
+            this.updateExplanation('完成！语义相近的词已聚类，词向量空间展示了词语之间的语义关系');
+        }
+        
+        this.draw();
+        this.frame++;
+        
+        if (this.frame < 300) {
+            requestAnimationFrame(() => this.animate());
+        } else {
+            this.isAnimating = false;
+        }
+    }
+    
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // 绘制连接（同组词之间）
+        const groups = [[], [], []];
+        this.words.forEach(word => groups[word.group].push(word));
+        
+        groups.forEach((group, groupIdx) => {
+            this.ctx.strokeStyle = `${this.colors[groupIdx]}33`;
+            this.ctx.lineWidth = 1;
+            
+            for (let i = 0; i < group.length; i++) {
+                for (let j = i + 1; j < group.length; j++) {
+                    const dist = Math.sqrt(
+                        Math.pow(group[i].x - group[j].x, 2) + 
+                        Math.pow(group[i].y - group[j].y, 2)
+                    );
+                    
+                    // 增加连接距离，使同组词连接更明显
+                    if (dist < 60) {
+                        const alpha = (1 - dist / 60) * 0.6; // 增加连接线的透明度
+                        this.ctx.strokeStyle = `${this.colors[groupIdx]}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`;
+                        this.ctx.lineWidth = 1.5;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(group[i].x, group[i].y);
+                        this.ctx.lineTo(group[j].x, group[j].y);
+                        this.ctx.stroke();
+                    }
+                }
+            }
+        });
+        
+        // 绘制词（增强视觉效果）
+        this.words.forEach(word => {
+            // 绘制词背景圆圈（更大更明显）
+            const gradient = this.ctx.createRadialGradient(word.x, word.y, 0, word.x, word.y, 10);
+            gradient.addColorStop(0, this.colors[word.group]);
+            gradient.addColorStop(1, this.colors[word.group] + 'AA');
+            this.ctx.fillStyle = gradient;
+            this.ctx.beginPath();
+            this.ctx.arc(word.x, word.y, 10, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // 绘制边框
+            this.ctx.strokeStyle = this.colors[word.group];
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+            
+            // 词文本（更清晰）
+            this.ctx.fillStyle = '#333';
+            this.ctx.font = 'bold 11px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            // 添加文本阴影以提高可读性
+            this.ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+            this.ctx.shadowBlur = 2;
+            this.ctx.fillText(word.word, word.x, word.y - 14);
+            this.ctx.shadowBlur = 0;
+        });
+    }
 }
 
 // 初始化范围输入显示和模型列表
@@ -373,20 +1654,50 @@ document.addEventListener('DOMContentLoaded', function() {
     // 加载模型列表
     loadModels();
     
+    // 初始化神经网络可视化（仅在模型透视标签页存在时）
+    const insightTab = document.getElementById('insight-tab');
+    if (insightTab) {
+        initNeuralNetwork();
+        initConvPoolDemo();
+        initFCNetworkDemo();
+        initWordVectorDemo();
+    }
+    
     const lrInput = document.getElementById('learning-rate');
-    const layersInput = document.getElementById('hidden-layers');
+    const totalLayersInput = document.getElementById('total-layers');
+    const neuronsInput = document.getElementById('neurons-per-layer');
     
     if (lrInput) {
         lrInput.addEventListener('input', function() {
             document.getElementById('lr-value').textContent = this.value;
+            updateNeuralNetwork();
         });
     }
     
-    if (layersInput) {
-        layersInput.addEventListener('input', function() {
-            document.getElementById('layers-value').textContent = this.value;
+    if (totalLayersInput) {
+        totalLayersInput.addEventListener('input', function() {
+            document.getElementById('total-layers-value').textContent = this.value;
+            updateNeuralNetwork();
         });
     }
+    
+    if (neuronsInput) {
+        neuronsInput.addEventListener('input', function() {
+            updateNeuralNetwork();
+        });
+    }
+    
+    // 窗口大小改变时重新初始化
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            initNeuralNetwork();
+            initConvPoolDemo();
+            initFCNetworkDemo();
+            initWordVectorDemo();
+        }, 250);
+    });
 });
 </script>
 {% endblock %}

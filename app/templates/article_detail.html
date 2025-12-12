@@ -12,6 +12,11 @@
                 <span>发布时间：{{ article['created_at'].strftime('%Y-%m-%d %H:%M') if article.get('created_at') else '' }}</span>
                 <span>👁 {{ article.views }}</span>
                 <span>❤️ {{ article.likes }}</span>
+                {% if current_user.is_authenticated %}
+                <button class="favorite-btn" id="favorite-btn-{{ article.id }}" onclick="favoriteArticle({{ article.id }})">
+                    <span class="favorite-icon">⭐</span> 收藏
+                </button>
+                {% endif %}
             </div>
         </div>
         
@@ -122,6 +127,48 @@
 .comment-content {
     line-height: 1.6;
 }
+
+.favorite-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-left: auto;
+}
+
+.favorite-btn:hover {
+    background: var(--light-color);
+    border-color: var(--primary-color);
+}
+
+.favorite-btn.favorited {
+    border-color: #FFC107;
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.favorite-btn.favorited .favorite-icon {
+    color: #FFC107;
+}
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function favoriteArticle(articleId) {
+    const result = await apiRequest(`/api/article/${articleId}/favorite`, 'POST');
+    if (result.success) {
+        const btn = document.getElementById(`favorite-btn-${articleId}`);
+        if (result.is_favorited) {
+            btn.classList.add('favorited');
+            showMessage('收藏成功', 'success');
+        } else {
+            btn.classList.remove('favorited');
+            showMessage('已取消收藏', 'info');
+        }
+    }
+}
+</script>
 {% endblock %}
 

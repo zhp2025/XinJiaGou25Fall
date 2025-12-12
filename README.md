@@ -136,8 +136,10 @@ python run.py
 
 ## 👤 测试账号
 
-- 管理员：`admin` / `admin123`
-- 测试用户：`testuser` / `test123`
+- 管理员：账号 `admin` / 密码 `admin123`
+- 测试用户：账号 `testuser` / 密码 `test123`
+
+**注意**：密码已加密存储，登录时自动验证。您也可以使用注册功能创建新账号。
 
 ## 📁 项目结构
 
@@ -146,31 +148,37 @@ AICove/
 ├── app/
 │   ├── __init__.py          # Flask 应用工厂（无数据库）
 │   ├── routes.py            # 路由定义（使用模拟数据）
-│   ├── mock_data.py         # 模拟数据
-│   ├── ai_service.py        # AI 服务模块
+│   ├── mock_data.py         # 模拟数据（包含用户、文章、工具等）
+│   ├── ai_service.py        # AI 服务模块（多模型支持）
 │   ├── models.py            # 数据库模型（预留，当前未使用）
 │   ├── templates/           # HTML 模板
-│   │   ├── base.html
-│   │   ├── index.html
-│   │   ├── ai_basics.html
-│   │   ├── ai_lab.html
-│   │   ├── applications.html
-│   │   ├── ethics.html
-│   │   ├── resources.html
-│   │   ├── search.html
-│   │   ├── community.html
-│   │   └── ...
+│   │   ├── base.html        # 基础模板
+│   │   ├── index.html       # 首页
+│   │   ├── ai_basics.html   # AI基础
+│   │   ├── ai_lab.html      # AI实验室
+│   │   ├── applications.html # 应用场景
+│   │   ├── ethics.html      # 伦理与未来
+│   │   ├── resources.html   # 资源中心
+│   │   ├── search.html      # 搜索页面
+│   │   ├── community.html   # 社区
+│   │   ├── profile.html     # 个人中心
+│   │   ├── login.html       # 登录页面
+│   │   ├── register.html    # 注册页面
+│   │   ├── forgot_password.html # 找回密码
+│   │   └── ...              # 其他模板
 │   └── static/             # 静态文件
 │       ├── css/
-│       │   ├── style.css
-│       │   └── animations.css
-│       └── js/
-│           └── main.js
+│       │   └── style.css    # 主样式文件（包含动画样式）
+│       ├── js/
+│       │   └── main.js      # 主JavaScript文件
+│       └── uploads/         # 用户上传文件（头像等）
+│           └── avatars/
 ├── config.py               # 配置文件
 ├── run.py                  # 应用入口
 ├── AICove.jpg             # Logo（需手动添加）
 ├── requirements.txt       # Python 依赖
-└── README.md              # 项目说明
+├── README.md              # 项目说明
+└── AI_API配置说明.md      # AI API 配置详细说明
 ```
 
 ## 📝 当前状态
@@ -183,12 +191,15 @@ AICove/
 - ✅ 多模型 AI 支持
 - ✅ 响应式设计
 - ✅ 动画效果
+- ✅ 用户个人中心（收藏、点赞、消息、设置）
+- ✅ 密码加密存储
+- ✅ 二级密码/安全问题支持
 
 ### ⚠️ 注意事项
 
 - **数据存储**：当前版本使用模拟数据（内存中），所有数据修改都是临时的，刷新页面会恢复
-- **注册功能**：暂时关闭，提示使用测试账号
-- **数据持久化**：发帖、评论等功能会返回成功消息，但数据不会持久化
+- **注册功能**：已实现，支持账号注册（账号、昵称、邮箱、密码、二级问题等）
+- **数据持久化**：发帖、评论等功能会返回成功消息，但数据不会持久化（重启应用后恢复）
 
 ## 🔄 后续接入数据库
 
@@ -229,15 +240,43 @@ AICove/
 
 主要 API 端点：
 
+**认证相关：**
 - `POST /auth/login` - 用户登录
-- `POST /auth/register` - 用户注册（当前关闭）
+- `POST /auth/register` - 用户注册
+- `GET /auth/forgot-password` - 找回密码页面
+- `POST /auth/forgot-password` - 找回密码
+- `GET /api/auth/security-question` - 根据用户名获取二级问题
+- `GET /api/auth/check-first-login` - 检查是否首次登录
+
+**AI 相关：**
 - `POST /api/ai-chat` - AI 聊天
 - `POST /api/ai-assistant` - AI 助教
 - `GET /api/models` - 获取可用模型列表
+
+**论坛相关：**
 - `POST /api/forum/post` - 创建论坛帖子
 - `POST /api/forum/<id>/comment` - 添加评论
-- `POST /api/forum/<id>/like` - 点赞帖子
-- `POST /api/ethics/<id>/like` - 点赞伦理专题
+- `POST /api/forum/<id>/like` - 点赞/取消点赞帖子
+- `POST /api/forum/<id>/favorite` - 收藏/取消收藏帖子
+
+**伦理专题相关：**
+- `POST /api/ethics/<id>/like` - 点赞/取消点赞伦理专题
+- `POST /api/ethics/<id>/favorite` - 收藏/取消收藏伦理专题
+- `POST /api/ethics/<id>/comment` - 添加评论
+
+**文章相关：**
+- `POST /api/article/<id>/favorite` - 收藏/取消收藏文章
+
+**个人中心相关：**
+- `GET /profile` - 个人中心页面
+- `GET /api/profile/favorites` - 获取收藏列表
+- `GET /api/profile/likes` - 获取点赞记录
+- `GET /api/profile/messages` - 获取消息列表
+- `POST /api/profile/username` - 更新昵称
+- `POST /api/profile/password` - 修改密码（需验证二级问题）
+- `POST /api/profile/security` - 修改二级密码（需验证当前答案）
+- `POST /api/profile/avatar` - 上传头像
+- `POST /api/profile/interests` - 更新兴趣领域
 
 ## 📚 相关文档
 

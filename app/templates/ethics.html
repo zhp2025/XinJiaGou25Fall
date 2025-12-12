@@ -17,8 +17,8 @@
             <h2><a href="{{ url_for('main.ethics_topic', slug=topic.slug) }}">{{ topic.title }}</a></h2>
             <p class="topic-description">{{ topic.description[:200] }}...</p>
             <div class="topic-meta">
-                <button class="like-btn" onclick="likeTopic({{ topic.id }})">
-                    ❤️ <span id="likes-{{ topic.id }}">{{ topic.likes }}</span>
+                <button class="like-btn" id="like-btn-{{ topic.id }}" onclick="likeTopic({{ topic.id }})">
+                    <span class="like-icon">🤍</span> <span id="likes-{{ topic.id }}">{{ topic.likes }}</span>
                 </button>
                 <a href="{{ url_for('main.ethics_topic', slug=topic.slug) }}" class="btn btn-outline">查看详情</a>
             </div>
@@ -88,6 +88,15 @@
     background: var(--light-color);
     border-color: var(--primary-color);
 }
+
+.like-btn.liked {
+    border-color: #FF5722;
+    background: rgba(255, 87, 34, 0.1);
+}
+
+.like-btn.liked:hover {
+    background: rgba(255, 87, 34, 0.15);
+}
 </style>
 {% endblock %}
 
@@ -96,8 +105,22 @@
 async function likeTopic(topicId) {
     const result = await apiRequest(`/api/ethics/${topicId}/like`, 'POST');
     if (result.success) {
+        // 更新点赞数
         document.getElementById(`likes-${topicId}`).textContent = result.likes;
-        showMessage('点赞成功', 'success');
+        
+        // 更新按钮样式
+        const likeBtn = document.getElementById(`like-btn-${topicId}`);
+        const likeIcon = likeBtn.querySelector('.like-icon');
+        
+        if (result.is_liked) {
+            likeIcon.textContent = '❤️';
+            likeBtn.classList.add('liked');
+            showMessage('点赞成功', 'success');
+        } else {
+            likeIcon.textContent = '🤍';
+            likeBtn.classList.remove('liked');
+            showMessage('已取消点赞', 'info');
+        }
     }
 }
 </script>

@@ -8,16 +8,51 @@
         <h1>注册</h1>
         <form id="register-form">
             <div class="form-group">
-                <label>用户名：</label>
+                <label>账号：<span class="required">*</span></label>
                 <input type="text" name="username" required>
             </div>
             <div class="form-group">
-                <label>邮箱：</label>
-                <input type="email" name="email" required>
+                <label>昵称：</label>
+                <input type="text" name="nickname" placeholder="留空将自动生成">
             </div>
             <div class="form-group">
-                <label>密码：</label>
+                <label>邮箱：</label>
+                <input type="email" name="email" placeholder="选填">
+            </div>
+            <div class="form-group">
+                <label>密码：<span class="required">*</span></label>
                 <input type="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label>二级问题（用于找回密码）：<span class="required">*</span></label>
+                <input type="text" name="security_question" placeholder="请自定义一个问题" required>
+            </div>
+            <div class="form-group">
+                <label>问题答案：<span class="required">*</span></label>
+                <input type="text" name="security_answer" required>
+            </div>
+            <div class="form-group">
+                <label>感兴趣的领域（可选，可多选）：</label>
+                <div class="interests-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="interests" value="LLM"> 大语言模型
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="interests" value="计算机视觉"> 计算机视觉
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="interests" value="深度学习"> 深度学习
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="interests" value="强化学习"> 强化学习
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="interests" value="AI伦理"> AI伦理
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="interests" value="AI应用"> AI应用
+                    </label>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary btn-block">注册</button>
         </form>
@@ -61,6 +96,11 @@
     font-weight: 500;
 }
 
+.required {
+    color: #e74c3c;
+    margin-left: 2px;
+}
+
 .form-group input {
     width: 100%;
     padding: 0.75rem;
@@ -69,9 +109,37 @@
     font-size: 1rem;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
     outline: none;
     border-color: var(--primary-color);
+}
+
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.interests-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
 }
 
 .btn-block {

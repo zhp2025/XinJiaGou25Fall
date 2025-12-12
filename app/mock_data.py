@@ -3,24 +3,52 @@
 在数据库建立之前使用模拟数据
 """
 from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
 
-# 模拟用户数据
+# 模拟用户数据（密码已加密）
 MOCK_USERS = [
     {
         'id': 1,
         'username': 'admin',
+        'nickname': '管理员',
         'email': 'admin@aicove.com',
-        'password': 'admin123',  # 实际应用中应该使用哈希
-        'role': 'admin'
+        'password': generate_password_hash('admin123'),  # 使用哈希加密
+        'role': 'admin',
+        'avatar': None,
+        'security_question': '您母亲的名字是？',
+        'security_answer': '妈妈',
+        'interests': [],  # 用户感兴趣的领域
+        'favorites': {},  # {type: {id: True/False}} 例如 {'article': {1: True}, 'forum': {2: False}}
+        'likes': {},  # {type: {id: True/False}}
+        'messages': [],  # 消息列表
+        'first_login': False  # 是否首次登录
     },
     {
         'id': 2,
         'username': 'testuser',
+        'nickname': '测试用户',
         'email': 'test@aicove.com',
-        'password': 'test123',
-        'role': 'user'
+        'password': generate_password_hash('test123'),  # 使用哈希加密
+        'role': 'user',
+        'avatar': None,
+        'security_question': '您最喜欢的颜色是？',
+        'security_answer': '蓝色',
+        'interests': [],
+        'favorites': {},
+        'likes': {},
+        'messages': [],
+        'first_login': True
     }
 ]
+
+# 收藏记录存储 {user_id: {type: {id: timestamp}}}
+USER_FAVORITES = {}
+
+# 点赞记录存储 {user_id: {type: {id: timestamp}}}
+USER_LIKES = {}
+
+# 消息存储 {user_id: [messages]}
+USER_MESSAGES = {}
 
 # 模拟文章数据
 MOCK_ARTICLES = [

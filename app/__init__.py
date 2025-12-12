@@ -12,8 +12,10 @@ class MockUser:
     def __init__(self, user_data):
         self.id = user_data['id']
         self.username = user_data['username']
-        self.email = user_data['email']
+        self.nickname = user_data.get('nickname', user_data['username'])
+        self.email = user_data.get('email')
         self.role = user_data.get('role', 'user')
+        self.avatar = user_data.get('avatar')
         self.is_authenticated = True
         self.is_active = True
         self.is_anonymous = False
