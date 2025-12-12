@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} - AICove{% endblock %}
+
+{% block content %}
+<div class="container">
+    <article class="article-detail">
+        <div class="article-header">
+            <h1>{{ article.title }}</h1>
+            <div class="article-meta">
+                <span>作者：{{ article.author.username if article.author else '系统' }}</span>
+                <span>发布时间：{{ article['created_at'].strftime('%Y-%m-%d %H:%M') if article.get('created_at') else '' }}</span>
+                <span>👁 {{ article.views }}</span>
+                <span>❤️ {{ article.likes }}</span>
+            </div>
+        </div>
+        
+        {% if article.cover_image %}
+        <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="article-cover">
+        {% endif %}
+        
+        <div class="article-body">
+            {{ article.content | safe }}
+        </div>
+    </article>
+
+    <!-- 评论区域 -->
+    {% if comments %}
+    <div class="comments-section">
+        <h2>评论 ({{ comments|length }})</h2>
+        <div class="comments-list">
+            {% for comment in comments %}
+            <div class="comment-item">
+                <div class="comment-header">
+                    <strong>{{ comment.author.username }}</strong>
+                    <span class="comment-date">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                <div class="comment-content">{{ comment.content }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.article-detail {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.article-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.article-header h1 {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.article-meta {
+    display: flex;
+    gap: 1.5rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.article-cover {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.article-body {
+    line-height: 1.8;
+    color: var(--text-color);
+}
+
+.comments-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.comments-section h2 {
+    margin-bottom: 1.5rem;
+}
+
+.comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.comment-item {
+    padding: 1rem;
+    background: var(--light-color);
+    border-radius: 4px;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.comment-date {
+    color: var(--text-light);
+}
+
+.comment-content {
+    line-height: 1.6;
+}
+</style>
+{% endblock %}
+

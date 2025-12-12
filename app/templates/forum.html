@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}问答论坛 - AICove{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1>问答论坛</h1>
+        <p>分享经验，提问解答，共同学习</p>
+    </div>
+</div>
+
+<div class="container">
+    {% if current_user.is_authenticated %}
+    <div class="create-post-section">
+        <button class="btn btn-primary" onclick="showCreatePostForm()">发布新帖</button>
+    </div>
+
+    <!-- 创建帖子表单 -->
+    <div id="create-post-form" class="post-form" style="display: none;">
+        <h2>发布新帖</h2>
+        <form onsubmit="createPost(event)">
+            <div class="form-group">
+                <label>标题：</label>
+                <input type="text" id="post-title" required>
+            </div>
+            <div class="form-group">
+                <label>内容：</label>
+                <textarea id="post-content" rows="8" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>分类：</label>
+                <select id="post-category">
+                    <option value="讨论">讨论</option>
+                    <option value="问答">问答</option>
+                    <option value="分享">分享</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">发布</button>
+                <button type="button" class="btn btn-outline" onclick="hideCreatePostForm()">取消</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- 帖子列表 -->
+    <div class="posts-container">
+        {% for post in posts.items %}
+        <div class="post-card">
+            <div class="post-header">
+                <div class="post-author-info">
+                    <strong>{{ post.author.username }}</strong>
+                    <span class="post-date">{{ post['created_at'].strftime('%Y-%m-%d %H:%M') if post.get('created_at') else '' }}</span>
+                </div>
+                <span class="post-category">{{ post.category }}</span>
+            </div>
+            <h2><a href="{{ url_for('main.forum_post', post_id=post.id) }}">{{ post.title }}</a></h2>
+            <p class="post-preview">{{ post.content[:200] }}...</p>
+            <div class="post-footer">
+                <div class="post-stats">
+                    <span>👁 {{ post.views }}</span>
+                    <span>❤️ {{ post.likes }}</span>
+                    <span>💬 {{ post.get('comments_count', 0) }}</span>
+                </div>
+                <a href="{{ url_for('main.forum_post', post_id=post.id) }}" class="btn btn-outline btn-small">查看详情</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分页 -->
+    {% if posts.pages > 1 %}
+    <div class="pagination">
+        {% if posts.has_prev %}
+        <a href="{{ url_for('main.forum', page=posts.prev_num) }}" class="page-link">上一页</a>
+        {% endif %}
+        
+        {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                {% if page_num == posts.page %}
+                <span class="page-link active">{{ page_num }}</span>
+                {% else %}
+                <a href="{{ url_for('main.forum', page=page_num) }}" class="page-link">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                <span class="page-link">...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if posts.has_next %}
+        <a href="{{ url_for('main.forum', page=posts.next_num) }}" class="page-link">下一页</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.create-post-section {
+    margin: 2rem 0;
+}
+
+.post-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.post-form h2 {
+    margin-bottom: 1.5rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.posts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.post-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s;
+}
+
+.post-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.post-author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.post-date {
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+.post-category {
+    padding: 0.25rem 0.75rem;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 12px;
+    font-size: 0.8rem;
+}
+
+.post-card h2 {
+    margin-bottom: 0.5rem;
+}
+
+.post-card h2 a {
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.post-card h2 a:hover {
+    color: var(--primary-color);
+}
+
+.post-preview {
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.post-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.post-stats {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+.page-link {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.3s;
+}
+
+.page-link:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.page-link.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showCreatePostForm() {
+    document.getElementById('create-post-form').style.display = 'block';
+}
+
+function hideCreatePostForm() {
+    document.getElementById('create-post-form').style.display = 'none';
+}
+
+async function createPost(event) {
+    event.preventDefault();
+    const title = document.getElementById('post-title').value;
+    const content = document.getElementById('post-content').value;
+    const category = document.getElementById('post-category').value;
+    
+    const result = await apiRequest('/api/forum/post', 'POST', {
+        title, content, category
+    });
+    
+    if (result.success) {
+        showMessage('帖子发布成功', 'success');
+        setTimeout(() => {
+            window.location.href = `/community/forum/${result.post_id}`;
+        }, 1000);
+    } else {
+        showMessage(result.message || '发布失败', 'error');
+    }
+}
+</script>
+{% endblock %}
+
