@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - AICove{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="post-detail">
+        <div class="post-header">
+            <div class="post-meta">
+                <strong>{{ post.author.username }}</strong>
+                <span>{{ post['created_at'].strftime('%Y-%m-%d %H:%M') if post.get('created_at') else '' }}</span>
+                <span class="post-category">{{ post.category }}</span>
+            </div>
+            <div class="post-stats">
+                <span>👁 {{ post.views }}</span>
+                <button class="like-btn" onclick="likePost({{ post.id }})">
+                    ❤️ <span id="likes-{{ post.id }}">{{ post.likes }}</span>
+                </button>
+            </div>
+        </div>
+        
+        <h1>{{ post.title }}</h1>
+        <div class="post-content">
+            {{ post.content | safe }}
+        </div>
+    </div>
+
+    <!-- 评论区域 -->
+    <div class="comments-section">
+        <h2>评论 ({{ comments|length }})</h2>
+        
+        {% if current_user.is_authenticated %}
+        <form id="comment-form" onsubmit="addComment(event, {{ post.id }})">
+            <textarea id="comment-content" placeholder="写下您的评论..." rows="4" required></textarea>
+            <button type="submit" class="btn btn-primary">发表评论</button>
+        </form>
+        {% else %}
+        <p><a href="{{ url_for('auth.login') }}">登录</a>后即可发表评论</p>
+        {% endif %}
+
+        <div class="comments-list">
+            {% for comment in comments %}
+            <div class="comment-item">
+                <div class="comment-header">
+                    <strong>{{ comment.author.username }}</strong>
+                    <span class="comment-date">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                <div class="comment-content">{{ comment.content }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.post-detail {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.post-detail .post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.post-meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.post-detail h1 {
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.post-content {
+    line-height: 1.8;
+    color: var(--text-color);
+}
+
+.comments-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.comments-section h2 {
+    margin-bottom: 1.5rem;
+}
+
+#comment-form {
+    margin-bottom: 2rem;
+}
+
+#comment-form textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    resize: vertical;
+}
+
+.comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.comment-item {
+    padding: 1rem;
+    background: var(--light-color);
+    border-radius: 4px;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.comment-date {
+    color: var(--text-light);
+}
+
+.comment-content {
+    line-height: 1.6;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function likePost(postId) {
+    const result = await apiRequest(`/api/forum/${postId}/like`, 'POST');
+    if (result.success) {
+        document.getElementById(`likes-${postId}`).textContent = result.likes;
+        showMessage('点赞成功', 'success');
+    }
+}
+
+async function addComment(event, postId) {
+    event.preventDefault();
+    const content = document.getElementById('comment-content').value;
+    
+    const result = await apiRequest(`/api/forum/${postId}/comment`, 'POST', { content });
+    if (result.success) {
+        showMessage('评论发表成功', 'success');
+        location.reload();
+    } else {
+        showMessage(result.message || '评论失败', 'error');
+    }
+}
+</script>
+{% endblock %}
+
