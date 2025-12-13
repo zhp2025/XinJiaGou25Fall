@@ -101,9 +101,10 @@
 
 .comments-section {
     background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    animation: fadeIn 0.6s ease-out;
 }
 
 .comments-section h2 {
@@ -131,20 +132,34 @@
 }
 
 .comment-item {
-    padding: 1rem;
-    background: var(--light-color);
-    border-radius: 4px;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%);
+    border-radius: 12px;
+    border-left: 3px solid var(--primary-color);
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.comment-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .comment-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.comment-header strong {
+    color: var(--primary-color);
+    font-weight: 600;
 }
 
 .comment-date {
     color: var(--text-light);
+    font-size: 0.85rem;
 }
 
 .comment-content {

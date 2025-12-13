@@ -24,7 +24,7 @@ def index():
     
     # 获取热门大模型（从工具中筛选）
     popular_models = [t for t in MOCK_TOOLS if t['category'] in ['大模型', 'LLM']]
-    popular_models = sorted(popular_models, key=lambda x: x['rating'], reverse=True)[:6]
+    popular_models = sorted(popular_models, key=lambda x: x['rating'], reverse=True)[:4]
     
     return render_template('index.html', 
                          popular_articles=popular_articles,

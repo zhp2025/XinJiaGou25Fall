@@ -14,7 +14,7 @@ MOCK_USERS = [
         'email': 'admin@aicove.com',
         'password': generate_password_hash('admin123'),  # 使用哈希加密
         'role': 'admin',
-        'avatar': None,
+        'avatar': 'default.jpg',
         'security_question': '您母亲的名字是？',
         'security_answer': '妈妈',
         'interests': [],  # 用户感兴趣的领域
@@ -30,7 +30,7 @@ MOCK_USERS = [
         'email': 'test@aicove.com',
         'password': generate_password_hash('test123'),  # 使用哈希加密
         'role': 'user',
-        'avatar': None,
+        'avatar': 'default.jpg',
         'security_question': '您最喜欢的颜色是？',
         'security_answer': '蓝色',
         'interests': [],
@@ -165,6 +165,16 @@ MOCK_TOOLS = [
         'icon': '🤖',
         'rating': 4.7,
         'rating_count': 900
+    },
+    {
+        'id': 6,
+        'name': 'Gemini',
+        'description': 'Google 开发的多模态大语言模型，支持文本、图像、视频等多种输入',
+        'category': '大模型',
+        'url': 'https://deepmind.google/technologies/gemini/',
+        'icon': '⭐',
+        'rating': 4.8,
+        'rating_count': 1100
     }
 ]
 

@@ -65,6 +65,18 @@ def create_app(config_class=Config):
             # 如果 logo 不存在，返回 404（前端会通过 onerror 隐藏）
             abort(404)
     
+    # 添加默认头像路由
+    @app.route('/default.jpg')
+    def serve_default_avatar():
+        from flask import send_from_directory, abort
+        import os
+        avatar_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'default.jpg')
+        if os.path.exists(avatar_path):
+            return send_from_directory(os.path.dirname(avatar_path), 'default.jpg')
+        else:
+            # 如果头像不存在，返回 404（前端会通过 onerror 隐藏）
+            abort(404)
+    
     # 添加错误处理
     @app.errorhandler(404)
     def not_found(error):

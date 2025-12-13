@@ -57,11 +57,9 @@
     <div id="tools-tab" class="tab-content">
         <div class="filter-bar">
             <button class="filter-btn active" onclick="filterTools('all')">全部</button>
+            <button class="filter-btn" onclick="filterTools('大模型')">大模型</button>
             <button class="filter-btn" onclick="filterTools('图像生成')">图像生成</button>
-            <button class="filter-btn" onclick="filterTools('写作')">写作</button>
-            <button class="filter-btn" onclick="filterTools('翻译')">翻译</button>
             <button class="filter-btn" onclick="filterTools('编程')">编程</button>
-            <button class="filter-btn" onclick="filterTools('视频生成')">视频生成</button>
         </div>
 
         <div class="tools-grid">
@@ -93,9 +91,40 @@
 <style>
 .applications-tabs {
     display: flex;
-    gap: 1rem;
+    gap: 1.5rem;
     margin: 2rem 0;
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 3px solid var(--border-color);
+}
+
+.tab-btn {
+    padding: 1rem 2.5rem;
+    background: none;
+    border: none;
+    border-bottom: 4px solid transparent;
+    cursor: pointer;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-light);
+    transition: all 0.3s ease;
+    position: relative;
+    bottom: -3px;
+}
+
+.tab-btn:hover {
+    color: var(--primary-color);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
 }
 
 .filter-bar {

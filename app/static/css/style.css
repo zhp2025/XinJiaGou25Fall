@@ -152,14 +152,17 @@ body {
 
 .user-info {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     color: var(--text-color);
     text-decoration: none;
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
     transition: background 0.3s;
-    font-size: 0.9rem;
+    min-width: 80px;
+    min-height: 60px;
+    justify-content: center;
 }
 
 .user-info:hover {
@@ -167,11 +170,22 @@ body {
 }
 
 .user-avatar-small {
-    width: 24px;
-    height: 24px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid var(--primary-color);
+    display: block;
 }
+
+.user-name-display {
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+    text-align: center;
 }
 
 /* 按钮样式 */
@@ -621,8 +635,16 @@ body {
 /* 模型网格 */
 .models-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .models-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .model-card {
@@ -720,11 +742,219 @@ body {
 }
 
 .flash-message {
-    padding: 1rem;
-    background: var(--primary-color);
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary-color), #357ABD);
     color: white;
-    border-radius: 4px;
+    border-radius: 8px;
     margin-bottom: 0.5rem;
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* 统一表单样式 */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.required {
+    color: #e74c3c;
+    margin-left: 2px;
+}
+
+/* 统一卡片样式 */
+.card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
+}
+
+/* 统一评论样式 */
+.comment-item {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.3s ease;
+}
+
+.comment-item:last-child {
+    border-bottom: none;
+}
+
+.comment-item:hover {
+    background: rgba(74, 144, 226, 0.02);
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.comment-header strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.comment-date {
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
+
+.comment-content {
+    color: var(--text-color);
+    line-height: 1.7;
+}
+
+/* 统一帖子卡片样式 */
+.post-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.post-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+    border-left-color: var(--primary-color);
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.post-stats {
+    display: flex;
+    gap: 1rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+/* 统一搜索结果样式 */
+.result-item {
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.result-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.15);
+    transform: translateY(-2px);
+}
+
+.result-type {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    background: linear-gradient(135deg, var(--primary-color), #357ABD);
+    color: white;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.result-item h3 {
+    margin-bottom: 0.75rem;
+}
+
+.result-item h3 a {
+    color: var(--text-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.result-item h3 a:hover {
+    color: var(--primary-color);
+}
+
+.result-content {
+    color: var(--text-light);
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+}
+
+/* 统一按钮样式增强 */
+.like-btn, .favorite-btn {
+    background: white;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.like-btn:hover, .favorite-btn:hover {
+    background: var(--light-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.like-btn.liked, .favorite-btn.favorited {
+    border-color: #FF5722;
+    background: rgba(255, 87, 34, 0.1);
+    color: #FF5722;
+}
+
+.like-btn.liked:hover, .favorite-btn.favorited:hover {
+    background: rgba(255, 87, 34, 0.15);
 }
 
 /* 响应式设计 */
@@ -911,7 +1141,7 @@ body {
     }
 }
 
-/* 页面元素动画�?*/
+/* 页面元素动画�?*/
 .fade-in {
     animation: fadeIn 0.6s ease-out;
 }
@@ -1007,7 +1237,7 @@ body {
     margin: 20px auto;
 }
 
-/* 进度条动�?*/
+/* 进度条动�?*/
 @keyframes progress {
     from {
         width: 0%;
@@ -1045,7 +1275,7 @@ body {
     animation: float 3s ease-in-out infinite;
 }
 
-/* 导航栏动�?*/
+/* 导航栏动�?*/
 .navbar {
     animation: slideInLeft 0.5s ease-out;
 }
@@ -1121,7 +1351,7 @@ body {
     pointer-events: none;
 }
 
-/* 打字机效�?*/
+/* 打字机效�?*/
 @keyframes typing {
     from {
         width: 0;

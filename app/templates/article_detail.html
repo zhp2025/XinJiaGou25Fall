@@ -53,21 +53,25 @@
 <style>
 .article-detail {
     background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     margin-bottom: 2rem;
+    animation: fadeIn 0.6s ease-out;
 }
 
 .article-header {
     margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
 }
 
 .article-header h1 {
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
     color: var(--text-color);
+    font-size: 2.25rem;
+    font-weight: 600;
+    line-height: 1.3;
 }
 
 .article-meta {
@@ -75,26 +79,31 @@
     gap: 1.5rem;
     color: var(--text-light);
     font-size: 0.9rem;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 .article-cover {
     width: 100%;
-    max-height: 400px;
+    max-height: 450px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .article-body {
-    line-height: 1.8;
+    line-height: 1.9;
     color: var(--text-color);
+    font-size: 1.05rem;
 }
 
 .comments-section {
     background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    animation: fadeIn 0.6s ease-out;
 }
 
 .comments-section h2 {
@@ -108,24 +117,38 @@
 }
 
 .comment-item {
-    padding: 1rem;
-    background: var(--light-color);
-    border-radius: 4px;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%);
+    border-radius: 12px;
+    border-left: 3px solid var(--primary-color);
+    transition: all 0.3s ease;
+}
+
+.comment-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .comment-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.comment-header strong {
+    color: var(--primary-color);
+    font-weight: 600;
 }
 
 .comment-date {
     color: var(--text-light);
+    font-size: 0.85rem;
 }
 
 .comment-content {
-    line-height: 1.6;
+    line-height: 1.7;
+    color: var(--text-color);
 }
 
 .favorite-btn {

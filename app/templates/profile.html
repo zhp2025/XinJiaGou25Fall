@@ -7,7 +7,7 @@
     <div class="profile-header">
         <div class="avatar-section">
             <div class="avatar-container">
-                <img id="avatar-img" src="{% if current_user.avatar %}{% set avatar_file = current_user.avatar.replace('/static/', '') if current_user.avatar.startswith('/static/') else current_user.avatar %}{{ url_for('static', filename=avatar_file) }}{% else %}https://via.placeholder.com/120?text=头像{% endif %}" alt="头像" class="avatar-large" onerror="this.src='https://via.placeholder.com/120?text=头像'">
+                <img id="avatar-img" src="/default.jpg" alt="头像" class="avatar-large" onerror="this.style.display='none'">
                 <button class="avatar-edit-btn" onclick="document.getElementById('avatar-upload').click()">
                     <span>✏️</span>
                 </button>
@@ -73,6 +73,14 @@
             <div class="setting-item">
                 <label>修改二级密码：</label>
                 <button class="btn btn-outline" onclick="showChangeSecurityModal()">修改二级密码</button>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h3>账户操作</h3>
+            <div class="setting-item">
+                <label>退出登录：</label>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
             </div>
         </div>
     </div>
@@ -226,14 +234,17 @@
 }
 
 .tab-btn {
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 2rem;
     background: none;
     border: none;
-    border-bottom: 3px solid transparent;
+    border-bottom: 4px solid transparent;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
     color: var(--text-light);
-    transition: all 0.3s;
+    transition: all 0.3s ease;
+    position: relative;
+    bottom: -3px;
 }
 
 .tab-btn:hover {
@@ -655,6 +666,13 @@ async function skipInterests() {
     if (result.success) {
         const modal = document.getElementById('interest-modal');
         if (modal) modal.remove();
+    }
+}
+
+// 退出登录
+function logout() {
+    if (confirm('确定要退出登录吗？')) {
+        window.location.href = '{{ url_for("auth.logout") }}';
     }
 }
 
