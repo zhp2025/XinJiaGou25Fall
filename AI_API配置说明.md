@@ -3,7 +3,9 @@
 ## 概述
 
 AICove 平台支持**5个 AI 模型提供商**，用于以下功能：
-- **AI 实验室**：与多个 AI 模型进行对话
+- **AI 实验室**：
+  - AI 游乐场：多功能 AI 工具（图像生成、写作、翻译、编程、研究、PPT制作）
+  - 模型对话：与多个 AI 模型进行实时对话
 - **AI 搜索**：智能语义搜索
 - **AI 助教**：基于 RAG 的智能问答
 
@@ -130,18 +132,70 @@ pip install google-generativeai==0.3.1
 - `google-generativeai`：Google Gemini SDK
 - `requests`：DeepSeek 和 Kimi 使用 REST API（已包含在核心依赖中）
 
+## 功能特性
+
+### 多轮对话支持
+
+- **编程工具**支持多轮对话功能
+- 系统会自动保存对话历史（最多10轮）
+- 后续问题会基于之前的对话上下文回答
+- 可以随时清空对话历史重新开始
+
+### 代码识别与下载
+
+- **自动识别代码语言**：Python、JavaScript、Java、C++、HTML、CSS、SQL等
+- **智能提取代码**：从代码块中自动提取代码内容
+- **自动设置扩展名**：根据代码语言自动设置正确的文件扩展名
+- **支持下载**：一键下载生成的代码文件
+
+### PPT自动生成
+
+- **自动分页**：内容过多时自动分页
+- **格式优化**：自动清理标题中的"幻灯片X："等前缀
+- **Markdown解析**：支持Markdown格式的PPT内容
+- **直接下载**：生成后可直接下载为.pptx文件
+
+### 全局快捷键
+
+- **回车发送**：在所有文本输入框中，按回车键发送/提交
+- **Shift+Enter换行**：按住Shift键再按回车键可以换行
+
 ## 功能说明
 
 ### AI 实验室
 
-- **位置**：`/ai-lab` > AI 游乐场
-- **功能**：与多个 AI 模型进行实时对话
+#### AI 游乐场
+
+- **位置**：`/ai-lab` > AI 游乐场标签
+- **功能**：多功能 AI 工具集，每个工具使用专门的 AI Agent
+- **可用工具**：
+  - **图像生成**：优化图像生成提示词，提供详细的图像描述
+  - **写作助手**：文章、文案创作与优化
+  - **翻译工具**：多语言翻译，保持原文语气和风格
+  - **编程助手**：
+    - 代码编写、调试、优化
+    - 支持多轮对话（保存对话历史）
+    - 自动识别代码语言（Python、JavaScript、Java、C++等）
+    - 支持代码下载（自动设置文件扩展名）
+  - **深入研究**：深度分析与研究，提供多角度思考
+  - **PPT制作**：
+    - 自动生成PPT大纲和内容
+    - 自动检测内容长度并分页
+    - 支持下载为.pptx文件
 - **可用模型**（根据配置的 API 密钥动态显示）：
   - **阿里云**：通义千问 Turbo / Plus / Max
   - **DeepSeek**：DeepSeek Chat
   - **Kimi**：Moonshot v1-8k
   - **Gemini**：Gemini 1.5 Flash（免费，推荐）/ Gemini Pro（付费）
   - **OpenAI**：GPT-3.5 Turbo（免费额度内可用）/ GPT-4（付费）
+
+#### 模型透视
+
+- **位置**：`/ai-lab` > 模型透视标签
+- **功能**：神经网络工作机制可视化演示
+- **主题**：
+  - 神经网络工作机制：交互式可视化，可调整参数
+  - 词向量空间：语义关系可视化
 
 ### AI 搜索
 
@@ -174,9 +228,26 @@ pip install google-generativeai==0.3.1
 
 ## API 端点
 
+### 基础 API
+
 - `GET /api/models` - 获取可用模型列表（无需登录）
 - `POST /api/ai-chat` - 发送消息到指定模型（需要登录）
 - `POST /api/ai-assistant` - AI 助教问答（需要登录）
+
+### AI 游乐场工具 API
+
+- `POST /api/playground/<tool_type>` - 执行工具
+  - `tool_type`: `image-gen`（图像生成）、`writing`（写作）、`translation`（翻译）、`programming`（编程）、`research`（研究）、`ppt`（PPT制作）
+  - 请求体：`{"input": "用户输入", "model": "模型标识", "conversation": []}`（编程工具支持conversation参数用于多轮对话）
+  - 返回：`{"success": true, "output": "输出内容", "language": "代码语言"}`（编程工具返回language字段）
+
+- `POST /api/playground/ppt/download` - 下载生成的PPT文件
+  - 请求体：`{"content": "PPT内容（Markdown格式）"}`
+  - 返回：PPT文件（.pptx格式）
+
+- `POST /api/playground/code/download` - 下载生成的代码文件
+  - 请求体：`{"code": "代码内容", "language": "代码语言", "extension": "文件扩展名"}`
+  - 返回：代码文件（根据语言自动设置扩展名）
 
 ## 错误处理
 
