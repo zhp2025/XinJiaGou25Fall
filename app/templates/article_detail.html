@@ -4,48 +4,82 @@
 
 {% block content %}
 <div class="container">
-    <article class="article-detail">
-        <div class="article-header">
-            <h1>{{ article.title }}</h1>
-            <div class="article-meta">
-                <span>作者：{{ article.author.username if article.author else '系统' }}</span>
-                <span>发布时间：{{ article['created_at'].strftime('%Y-%m-%d %H:%M') if article.get('created_at') else '' }}</span>
-                <span>👁 {{ article.views }}</span>
-                <span>❤️ {{ article.likes }}</span>
-                {% if current_user.is_authenticated %}
-                <button class="favorite-btn" id="favorite-btn-{{ article.id }}" onclick="favoriteArticle({{ article.id }})">
-                    <span class="favorite-icon">⭐</span> 收藏
-                </button>
-                {% endif %}
-            </div>
-        </div>
+    <!-- 面包屑导航 -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('main.index') }}">首页</a> >
+        <a href="{{ url_for('main.applications') }}">应用场景</a> >
+        <a href="#">案例库</a> >
+        <span>AI艺术</span>
+    </nav>
+
+    <div class="content-layout">
+        <div class="content-main">
+            <article class="article-detail">
+                <div class="article-header">
+                    <h1>{{ article.title }}</h1>
+                    <div class="article-meta">
+                        <span class="meta-item">👍 {{ article.likes }}</span>
+                        <span class="meta-item">⭐ {{ article.get('stars', 606) }}</span>
+                        <span class="meta-item">💬 {{ article.get('comments_count', 38) }}</span>
+                        <span class="meta-item meta-time">{{ article['created_at'].strftime('%Y-%m-%d %H:%M') if article.get('created_at') else '2025-12-5 13:55' }}</span>
+                    </div>
+                </div>
         
         {% if article.cover_image %}
         <img src="{{ article.cover_image }}" alt="{{ article.title }}" class="article-cover">
         {% endif %}
         
-        <div class="article-body">
-            {{ article.content | safe }}
-        </div>
-    </article>
-
-    <!-- 评论区域 -->
-    {% if comments %}
-    <div class="comments-section">
-        <h2>评论 ({{ comments|length }})</h2>
-        <div class="comments-list">
-            {% for comment in comments %}
-            <div class="comment-item">
-                <div class="comment-header">
-                    <strong>{{ comment.author.username }}</strong>
-                    <span class="comment-date">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                <div class="article-body">
+                    {{ article.content | safe }}
                 </div>
-                <div class="comment-content">{{ comment.content }}</div>
+                
+                <div class="article-source">
+                    来源: @balabala
+                </div>
+                
+                <div class="comments-header">
+                    <span class="comments-count">💬 {{ article.get('comments_count', 38) }}条评论</span>
+                </div>
+                
+                <div class="comment-input-area">
+                    <div class="comment-input-wrapper">
+                        <span class="comment-user-icon">👤</span>
+                        <input type="text" placeholder="说点什么吧..." class="comment-input">
+                        <button class="comment-submit-btn">></button>
+                    </div>
+                </div>
+            </article>
+        </div>
+        
+        <div class="sidebar-right">
+            <div class="sidebar-search">
+                <form class="sidebar-search-form" action="{{ url_for('main.search') }}" method="GET">
+                    <input type="text" name="q" placeholder="搜索..." class="sidebar-search-input">
+                    <button type="submit" class="sidebar-search-btn">🔍</button>
+                    <button type="button" class="sidebar-search-q">Q</button>
+                </form>
             </div>
-            {% endfor %}
+            
+            <div class="sidebar-hot-searches">
+                <h3 class="sidebar-section-title">热门搜索</h3>
+                <div class="hot-search-tags">
+                    <a href="{{ url_for('main.search', q='AI基础') }}" class="hot-search-tag">AI基础</a>
+                    <a href="{{ url_for('main.search', q='AI基础') }}" class="hot-search-tag">AI基础</a>
+                </div>
+            </div>
+            
+            <div class="sidebar-more-content">
+                <h3 class="sidebar-section-title">更多内容</h3>
+                <div class="more-content-list">
+                    {% for i in range(2) %}
+                    <div class="more-content-item">
+                        <!-- 更多内容占位符 -->
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
-    {% endif %}
 </div>
 {% endblock %}
 
@@ -81,6 +115,17 @@
     font-size: 0.9rem;
     flex-wrap: wrap;
     align-items: center;
+    margin-top: 1rem;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.meta-time {
+    margin-left: auto;
 }
 
 .article-cover {
@@ -173,6 +218,143 @@
 
 .favorite-btn.favorited .favorite-icon {
     color: #FFC107;
+}
+
+.article-source {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.comments-header {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.comments-count {
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+.comment-input-area {
+    margin-top: 1.5rem;
+}
+
+.comment-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.comment-user-icon {
+    font-size: 1.2rem;
+}
+
+.comment-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.comment-submit-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+.comment-submit-btn:hover {
+    background: #357ABD;
+}
+
+/* 右侧边栏 */
+.sidebar-right {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+.sidebar-search {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-search-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.sidebar-search-input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.sidebar-search-btn, .sidebar-search-q {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.sidebar-search-btn:hover, .sidebar-search-q:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.sidebar-hot-searches, .sidebar-more-content {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+}
+
+.sidebar-section-title {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.hot-search-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.more-content-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.more-content-item {
+    height: 120px;
+    background: #f5f5f5;
+    border-radius: 8px;
 }
 </style>
 {% endblock %}

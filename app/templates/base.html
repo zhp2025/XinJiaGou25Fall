@@ -18,33 +18,32 @@
                 </a>
             </div>
             <ul class="nav-menu">
-                <li><a href="{{ url_for('main.index') }}">首页</a></li>
-                <li><a href="{{ url_for('main.ai_basics') }}">AI基础</a></li>
-                <li><a href="{{ url_for('main.ai_lab') }}">AI实验室</a></li>
-                <li><a href="{{ url_for('main.applications') }}">应用场景</a></li>
-                <li><a href="{{ url_for('main.ethics') }}">伦理与未来</a></li>
-                <li><a href="{{ url_for('main.resources') }}">资源中心</a></li>
-                <li><a href="{{ url_for('main.community') }}">社区</a></li>
+                <li><a href="{{ url_for('main.index') }}" class="nav-link-item" data-route="index">首页</a></li>
+                <li><a href="{{ url_for('main.ai_basics') }}" class="nav-link-item" data-route="ai_basics">AI基础</a></li>
+                <li><a href="{{ url_for('main.ai_lab') }}" class="nav-link-item" data-route="ai_lab">AI实验室</a></li>
+                <li><a href="{{ url_for('main.applications') }}" class="nav-link-item" data-route="applications">应用场景</a></li>
+                <li><a href="{{ url_for('main.ethics') }}" class="nav-link-item" data-route="ethics">伦理与未来</a></li>
+                <li><a href="{{ url_for('main.resources') }}" class="nav-link-item" data-route="resources">资源中心</a></li>
+                <li><a href="{{ url_for('main.community') }}" class="nav-link-item" data-route="community">社区</a></li>
             </ul>
             <div class="nav-actions">
-                <form class="search-form" action="{{ url_for('main.search') }}" method="GET">
-                    <input type="text" name="q" placeholder="站内搜索..." class="search-input">
-                    <button type="submit" class="search-btn">搜索</button>
-                </form>
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.profile') }}" class="user-info" title="个人中心">
+                    <a href="{{ url_for('main.profile') }}" class="user-avatar-link" title="个人中心">
                         <img src="/default.jpg" alt="头像" class="user-avatar-small" onerror="this.style.display='none'">
-                        <span class="user-name-display">
-                            {{ current_user.nickname if current_user.nickname else current_user.username }}
-                        </span>
                     </a>
                 {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline">登录</a>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary">注册</a>
+                    <a href="{{ url_for('auth.login') }}" class="nav-link">登录</a>
+                    <a href="{{ url_for('main.profile') }}" class="user-avatar-link" title="个人中心">
+                        <img src="/default.jpg" alt="头像" class="user-avatar-small" onerror="this.style.display='none'">
+                    </a>
                 {% endif %}
             </div>
         </div>
     </nav>
+
+    <!-- 搜索栏区域 - 只在首页显示 -->
+    {% block search_area %}
+    {% endblock %}
 
     <!-- 主要内容 -->
     <main class="main-content">
@@ -63,32 +62,77 @@
 
     <!-- 页脚 -->
     <footer class="footer">
+        <div class="footer-background"></div>
         <div class="container">
             <div class="footer-content">
-                <div class="footer-section">
-                    <h3>关于 AICove</h3>
-                    <p>探索人工智能的无限可能</p>
+                <div class="footer-left">
+                    <div class="footer-company">北京AICove电子科技有限公司</div>
+                    <div class="footer-contact">
+                        <div>地址:北京市海淀区朝和园路5号北京大学业化中心A座302室</div>
+                        <div>电话:010-8888-2025</div>
+                        <div>邮箱:aicove.pku.edu.cn</div>
+                    </div>
+                    <div class="footer-social">
+                        <a href="#" class="social-icon">💬</a>
+                        <a href="#" class="social-icon">📱</a>
+                        <a href="#" class="social-icon">🐧</a>
+                    </div>
+                    <div class="footer-links">
+                        <a href="{{ url_for('main.about') }}">关于我们</a> |
+                        <a href="{{ url_for('main.about') }}">加入我们</a> |
+                        <a href="{{ url_for('main.privacy') }}">隐私指南</a> |
+                        <a href="{{ url_for('main.guide') }}">使用政策</a>
+                    </div>
                 </div>
-                <div class="footer-section">
-                    <h3>快速链接</h3>
-                    <ul>
-                        <li><a href="{{ url_for('main.about') }}">关于我们</a></li>
-                        <li><a href="{{ url_for('main.privacy') }}">隐私政策</a></li>
-                        <li><a href="{{ url_for('main.guide') }}">使用指南</a></li>
-                    </ul>
+                <div class="footer-right">
+                    <div class="footer-logo-large">
+                        <img src="/AICove.jpg" alt="AICove" class="footer-logo-img" onerror="this.style.display='none'">
+                        <span class="footer-logo-text">AICove</span>
+                    </div>
                 </div>
-                <div class="footer-section">
-                    <h3>联系我们</h3>
-                    <p>邮箱: contact@aicove.com</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 AICove. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+    // 导航栏高亮
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link-item');
+        
+        // 路由映射
+        const routeMap = {
+            '/': 'index',
+            '/ai-basics': 'ai_basics',
+            '/ai-lab': 'ai_lab',
+            '/applications': 'applications',
+            '/ethics': 'ethics',
+            '/resources': 'resources',
+            '/community': 'community'
+        };
+        
+        // 获取当前路由
+        let currentRoute = routeMap[currentPath];
+        if (!currentRoute) {
+            // 尝试匹配部分路径
+            for (const path in routeMap) {
+                if (currentPath.startsWith(path)) {
+                    currentRoute = routeMap[path];
+                    break;
+                }
+            }
+        }
+        
+        // 高亮对应导航项
+        navLinks.forEach(link => {
+            const route = link.getAttribute('data-route');
+            if (route === currentRoute) {
+                link.classList.add('active');
+            }
+        });
+    });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -28,7 +28,7 @@
                 </div>
             </div>
             <div class="chat-input-container">
-                <textarea id="assistant-input" placeholder="输入您的问题..." rows="3"></textarea>
+                <textarea id="assistant-input" placeholder="输入您的问题..." rows="3" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();askAssistant();}"></textarea>
                 <button onclick="askAssistant()" class="btn btn-primary">发送</button>
             </div>
         </div>

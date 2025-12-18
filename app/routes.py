@@ -26,10 +26,23 @@ def index():
     popular_models = [t for t in MOCK_TOOLS if t['category'] in ['大模型', 'LLM']]
     popular_models = sorted(popular_models, key=lambda x: x['rating'], reverse=True)[:4]
     
+    # 获取热门帖子（用于社区排行榜）
+    hot_posts = sorted(MOCK_FORUM_POSTS, key=lambda x: (x['likes'], x['views']), reverse=True)[:5]
+    # 为帖子添加作者信息
+    for post in hot_posts:
+        user = get_user_by_id(post['user_id'])
+        if user:
+            display_name = user.get('nickname', user['username'])
+            post['author'] = {'username': display_name}
+        else:
+            post['author'] = {'username': '未知用户'}
+        post['comments_count'] = post.get('comments_count', 0)
+    
     return render_template('index.html', 
                          popular_articles=popular_articles,
                          latest_news=latest_news,
-                         popular_models=popular_models)
+                         popular_models=popular_models,
+                         hot_posts=hot_posts)
 
 
 @main_bp.route('/ai-basics')
@@ -95,8 +108,34 @@ def resources():
 @main_bp.route('/community')
 def community():
     """社区模块"""
-    # 获取热门帖子
-    hot_posts = sorted(MOCK_FORUM_POSTS, key=lambda x: (x['likes'], x['views']), reverse=True)[:10]
+    # 获取搜索关键词
+    search_query = request.args.get('q', '').strip()
+    
+    # 获取所有帖子
+    all_posts = MOCK_FORUM_POSTS.copy()
+    
+    # 如果有搜索关键词，进行过滤
+    if search_query:
+        search_query_lower = search_query.lower()
+        filtered_posts = []
+        for post in all_posts:
+            # 搜索标题和内容
+            title_match = search_query_lower in post.get('title', '').lower()
+            content_match = search_query_lower in post.get('content', '').lower()
+            if title_match or content_match:
+                filtered_posts.append(post)
+        all_posts = filtered_posts
+    
+    # 排序：如果有搜索，按相关性（匹配度）排序；否则按热门度排序
+    if search_query:
+        # 搜索时按匹配度排序（标题匹配优先）
+        def sort_key(post):
+            title_match = search_query_lower in post.get('title', '').lower()
+            return (not title_match, -post.get('likes', 0), -post.get('views', 0))
+        hot_posts = sorted(all_posts, key=sort_key)[:20]
+    else:
+        # 默认按热门度排序
+        hot_posts = sorted(all_posts, key=lambda x: (x['likes'], x['views']), reverse=True)[:10]
     
     # 为帖子添加作者信息
     for post in hot_posts:
@@ -108,7 +147,7 @@ def community():
             post['author'] = {'username': '未知用户'}
         post['comments_count'] = post.get('comments_count', 0)
     
-    return render_template('community.html', hot_posts=hot_posts)
+    return render_template('community.html', hot_posts=hot_posts, search_query=search_query)
 
 
 @main_bp.route('/community/forum')
@@ -1041,4 +1080,507 @@ def ai_assistant_api():
         return jsonify({
             'success': False,
             'message': response['message']
+        })
+
+
+@api_bp.route('/playground/<tool_type>', methods=['POST'])
+@login_required
+def playground_tool(tool_type):
+    """AI游乐场工具接口 - 每个工具使用专门的agent"""
+    from app.ai_service import chat_with_model
+    from config import Config
+    
+    data = request.get_json()
+    user_input = data.get('input', '')
+    model = data.get('model', 'aliyun-qwen-turbo')
+    conversation = data.get('conversation', [])  # 对话历史（仅编程工具使用）
+    
+    if not user_input:
+        return jsonify({
+            'success': False,
+            'message': '输入内容不能为空'
+        })
+    
+    # 为每个工具定义专门的agent提示词
+    agent_prompts = {
+        'image-gen': """你是一个专业的AI图像生成助手。用户会描述他们想要生成的图像，你需要：
+1. 理解用户的描述
+2. 优化和扩展描述，使其更适合图像生成
+3. 提供详细的图像生成提示词（prompt）
+
+注意：你只负责生成提示词，不直接生成图像。请用中文回复。""",
+        'writing': """你是一个专业的AI写作助手。你的任务是帮助用户进行各种写作工作，包括：
+- 文章写作
+- 文案创作
+- 内容优化
+- 创意写作
+
+请根据用户的需求，提供高质量的写作内容。用中文回复。""",
+        'translation': """你是一个专业的AI翻译助手。你的任务是：
+1. 准确翻译用户提供的文本
+2. 保持原文的语气和风格
+3. 提供多种翻译选项（如果适用）
+
+请用中文回复。""",
+        'programming': """你是一个专业的AI编程助手。你的任务是：
+1. 帮助用户编写代码
+2. 调试和优化代码
+3. 解释代码逻辑
+4. 提供编程建议
+
+请用中文回复，代码部分使用代码块格式（```语言名\n代码\n```）。如果用户的问题涉及代码，请提供完整的、可运行的代码。""",
+        'research': """你是一个专业的AI研究助手。你的任务是：
+1. 深入分析用户提出的问题
+2. 提供全面的研究视角
+3. 引用相关理论和实践
+4. 提供多角度的思考
+
+请用中文回复，内容要专业、深入、全面。""",
+        'ppt': """你是一个专业的PPT制作助手。你的任务是：
+1. 根据用户的需求，生成PPT的大纲和内容
+2. 为每个幻灯片提供标题和要点
+3. 提供结构化的内容，方便制作PPT
+4. 使用Markdown格式输出，便于后续处理
+
+输出格式：
+# 幻灯片1标题
+- 要点1
+- 要点2
+
+# 幻灯片2标题
+- 要点1
+- 要点2
+
+请用中文回复。"""
+    }
+    
+    # 获取对应工具的agent提示词
+    system_prompt = agent_prompts.get(tool_type, '你是一个专业的AI助手。请用中文回复。')
+    
+    # 如果是编程工具且有对话历史，构建多轮对话
+    if tool_type == 'programming' and conversation:
+        # 构建对话消息列表
+        messages = [{'role': 'system', 'content': system_prompt}]
+        # 添加历史对话
+        for msg in conversation:
+            messages.append({'role': msg['role'], 'content': msg['content']})
+        # 添加当前用户输入
+        messages.append({'role': 'user', 'content': user_input})
+        
+        # 调用支持多轮对话的API
+        response = chat_with_model_multi_turn(messages, model)
+    else:
+        # 单轮对话
+        full_message = f"{system_prompt}\n\n用户需求：{user_input}"
+        response = chat_with_model(full_message, model)
+    
+    if response['success']:
+        result = {
+            'success': True,
+            'output': response['message'],
+            'model': response.get('model', model)
+        }
+        
+        # 如果是PPT制作，标记为PPT格式
+        if tool_type == 'ppt':
+            result['type'] = 'ppt'
+        
+        # 如果是编程工具，识别代码语言
+        if tool_type == 'programming':
+            language = detect_code_language(response['message'])
+            result['language'] = language
+        
+        return jsonify(result)
+    else:
+        return jsonify({
+            'success': False,
+            'message': response['message']
+        })
+
+
+def detect_code_language(text):
+    """检测代码语言类型"""
+    import re
+    
+    # 检查代码块中的语言标识
+    code_block_pattern = r'```(\w+)?\n'
+    matches = re.findall(code_block_pattern, text)
+    if matches:
+        lang = matches[0].lower() if matches[0] else ''
+        if lang:
+            return lang
+    
+    # 检查代码块结束标记前的语言
+    code_block_pattern2 = r'```(\w+)?\s*\n'
+    match = re.search(code_block_pattern2, text)
+    if match and match.group(1):
+        return match.group(1).lower()
+    
+    # 根据关键词和代码特征判断
+    text_lower = text.lower()
+    
+    # Python特征
+    if any(keyword in text for keyword in ['def ', 'import ', 'from ', 'print(', '__init__', 'if __name__']):
+        return 'python'
+    # JavaScript特征
+    elif any(keyword in text for keyword in ['function ', 'const ', 'let ', 'var ', '=>', 'console.log']):
+        return 'javascript'
+    # Java特征
+    elif 'public class' in text or 'public static void main' in text:
+        return 'java'
+    # C/C++特征
+    elif '#include' in text or 'using namespace' in text:
+        return 'cpp'
+    # HTML特征
+    elif '<html' in text_lower or '<div' in text_lower or '<body' in text_lower:
+        return 'html'
+    # CSS特征
+    elif re.search(r'\{[^}]*:[^}]*\}', text) and ('color:' in text_lower or 'margin:' in text_lower):
+        return 'css'
+    # SQL特征
+    elif any(keyword in text_lower for keyword in ['select ', 'from ', 'where ', 'insert into', 'create table']):
+        return 'sql'
+    # TypeScript特征
+    elif 'interface ' in text or 'type ' in text or ': string' in text or ': number' in text:
+        return 'typescript'
+    # Go特征
+    elif 'package ' in text or 'func ' in text or 'import (' in text:
+        return 'go'
+    # Rust特征
+    elif 'fn ' in text and 'let ' in text:
+        return 'rust'
+    
+    return 'txt'
+
+
+def chat_with_model_multi_turn(messages, model='aliyun-qwen-turbo'):
+    """支持多轮对话的模型调用"""
+    from app.ai_service import chat_with_model
+    
+    # 将对话历史转换为上下文文本
+    # 保留最近的对话历史（最多10轮）
+    recent_messages = messages[-10:] if len(messages) > 10 else messages
+    
+    conversation_text = ""
+    for msg in recent_messages[1:]:  # 跳过system消息
+        role = "用户" if msg['role'] == 'user' else "助手"
+        conversation_text += f"{role}：{msg['content']}\n\n"
+    
+    # 构建包含上下文的完整消息
+    system_prompt = recent_messages[0]['content'] if recent_messages else "你是一个专业的AI助手。"
+    full_message = f"{system_prompt}\n\n以下是对话历史：\n{conversation_text}\n请根据对话历史回答用户的最新问题。"
+    
+    return chat_with_model(full_message, model)
+
+
+
+
+@api_bp.route('/playground/code/download', methods=['POST'])
+@login_required
+def download_code():
+    """下载代码文件"""
+    from flask import send_file
+    from io import BytesIO
+    
+    data = request.get_json()
+    code_content = data.get('code', '')
+    extension = data.get('extension', 'txt')
+    
+    if not code_content:
+        return jsonify({
+            'success': False,
+            'message': '代码内容不能为空'
+        })
+    
+    try:
+        # 提取代码块中的代码（如果有代码块标记）
+        import re
+        
+        # 尝试提取代码块
+        code_block_pattern = r'```(?:\w+)?\s*\n(.*?)```'
+        matches = re.findall(code_block_pattern, code_content, re.DOTALL)
+        if matches:
+            # 使用第一个代码块
+            code_content = matches[0].strip()
+        else:
+            # 如果没有代码块标记，尝试提取可能的代码部分
+            # 查找包含代码特征的行
+            lines = code_content.split('\n')
+            code_lines = []
+            in_code = False
+            for line in lines:
+                # 检测代码特征
+                if any(keyword in line for keyword in ['def ', 'function', 'class ', 'import ', 'const ', 'let ', 'var ', 'public ', 'private ']):
+                    in_code = True
+                if in_code:
+                    code_lines.append(line)
+                # 如果遇到空行且已有代码，可能代码结束
+                if in_code and not line.strip() and len(code_lines) > 5:
+                    break
+            
+            if code_lines:
+                code_content = '\n'.join(code_lines).strip()
+        
+        # 创建文件
+        code_io = BytesIO()
+        code_io.write(code_content.encode('utf-8'))
+        code_io.seek(0)
+        
+        # 确定MIME类型
+        mime_types = {
+            'py': 'text/x-python',
+            'js': 'text/javascript',
+            'ts': 'text/typescript',
+            'java': 'text/x-java-source',
+            'cpp': 'text/x-c++',
+            'c': 'text/x-c',
+            'html': 'text/html',
+            'css': 'text/css',
+            'sql': 'text/x-sql',
+            'sh': 'text/x-shellscript',
+            'json': 'application/json',
+            'xml': 'application/xml',
+            'yml': 'text/yaml',
+            'md': 'text/markdown',
+            'txt': 'text/plain'
+        }
+        
+        mime_type = mime_types.get(extension, 'text/plain')
+        
+        return send_file(
+            code_io,
+            mimetype=mime_type,
+            as_attachment=True,
+            download_name=f'code.{extension}'
+        )
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'生成代码文件失败: {str(e)}'
+        })
+
+
+@api_bp.route('/playground/ppt/download', methods=['POST'])
+@login_required
+def download_ppt():
+    """生成并下载PPT文件"""
+    from pptx import Presentation
+    from io import BytesIO
+    from flask import send_file
+    import os
+    
+    data = request.get_json()
+    ppt_content = data.get('content', '')
+    
+    if not ppt_content:
+        return jsonify({
+            'success': False,
+            'message': 'PPT内容不能为空'
+        })
+    
+    try:
+        # 创建新的PPT，不使用模板
+        prs = Presentation()
+        
+        # 解析Markdown格式的内容，自动检测和调整页面
+        slides_data = []
+        slides = ppt_content.split('#')
+        
+        for slide_content in slides:
+            slide_content = slide_content.strip()
+            if not slide_content:
+                continue
+            
+            lines = slide_content.split('\n')
+            title = lines[0].strip()
+            if not title:
+                continue
+            
+            # 清理标题：移除"幻灯片X："这样的前缀
+            import re
+            title = re.sub(r'^幻灯片\d+[：:]\s*', '', title)
+            title = re.sub(r'^Slide\s+\d+[：:]\s*', '', title, flags=re.IGNORECASE)
+            
+            # 提取要点
+            bullet_points = []
+            for line in lines[1:]:
+                line = line.strip()
+                if not line:
+                    continue
+                if line.startswith('-') or line.startswith('•') or line.startswith('*'):
+                    bullet_points.append(line.lstrip('-•*').strip())
+                elif line:
+                    bullet_points.append(line)
+            
+            # 自动检测内容是否适合单页，如果内容过多则自动分页
+            MAX_POINTS_PER_SLIDE = 6  # 每页最多6个要点
+            MAX_TITLE_LENGTH = 50  # 标题最大长度
+            MAX_POINT_LENGTH = 100  # 每个要点最大长度
+            
+            # 如果标题过长，截断
+            if len(title) > MAX_TITLE_LENGTH:
+                title = title[:MAX_TITLE_LENGTH] + '...'
+            
+            # 如果要点过多或单个要点过长，需要分页
+            if len(bullet_points) > MAX_POINTS_PER_SLIDE:
+                # 分页处理
+                total_pages = (len(bullet_points) + MAX_POINTS_PER_SLIDE - 1) // MAX_POINTS_PER_SLIDE
+                for i in range(0, len(bullet_points), MAX_POINTS_PER_SLIDE):
+                    page_points = bullet_points[i:i + MAX_POINTS_PER_SLIDE]
+                    # 截断过长的要点
+                    page_points = [p[:MAX_POINT_LENGTH] + '...' if len(p) > MAX_POINT_LENGTH else p for p in page_points]
+                    
+                    page_title = title
+                    if total_pages > 1:
+                        page_title = f"{title}（{i//MAX_POINTS_PER_SLIDE + 1}/{total_pages}）"
+                    
+                    slides_data.append({
+                        'title': page_title,
+                        'points': page_points
+                    })
+            else:
+                # 单页内容，截断过长的要点
+                bullet_points = [p[:MAX_POINT_LENGTH] + '...' if len(p) > MAX_POINT_LENGTH else p for p in bullet_points]
+                
+                slides_data.append({
+                    'title': title,
+                    'points': bullet_points
+                })
+        
+        # 如果没有幻灯片，创建一个默认的
+        if not slides_data:
+            slides_data.append({
+                'title': 'PPT内容',
+                'points': []
+            })
+        
+        # 创建幻灯片并添加内容
+        for i, slide_data in enumerate(slides_data):
+            # 选择合适的布局
+            # 0: 标题幻灯片, 1: 标题和内容, 5: 仅标题
+            if i == 0 and len(slides_data) > 1:
+                # 第一张幻灯片使用标题幻灯片（布局0）
+                layout_index = 0
+            else:
+                # 其他幻灯片使用标题和内容布局（布局1）
+                layout_index = 1
+            
+            # 确保布局索引有效
+            if layout_index >= len(prs.slide_layouts):
+                layout_index = 0
+            
+            # 创建幻灯片
+            try:
+                slide = prs.slides.add_slide(prs.slide_layouts[layout_index])
+            except:
+                # 如果布局不存在，使用第一个可用布局
+                slide = prs.slides.add_slide(prs.slide_layouts[0])
+            
+            # 填充标题
+            title_added = False
+            try:
+                # 尝试使用标题占位符
+                if hasattr(slide, 'shapes') and slide.shapes.title:
+                    title_shape = slide.shapes.title
+                    if title_shape.has_text_frame:
+                        title_shape.text = slide_data['title']
+                        title_added = True
+            except:
+                pass
+            
+            # 如果没有标题占位符，尝试查找其他文本框
+            if not title_added:
+                for shape in slide.shapes:
+                    if hasattr(shape, 'text_frame') and shape.text_frame:
+                        try:
+                            # 检查是否是标题位置（通常在顶部）
+                            if shape.top < slide.height * 0.2:  # 在顶部20%区域内
+                                shape.text_frame.text = slide_data['title']
+                                title_added = True
+                                break
+                        except:
+                            pass
+            
+            # 填充内容
+            if slide_data['points']:
+                content_added = False
+                
+                # 方法1: 尝试使用内容占位符（索引1）
+                try:
+                    if len(slide.placeholders) > 1:
+                        content_placeholder = slide.placeholders[1]
+                        if content_placeholder != slide.shapes.title and hasattr(content_placeholder, 'text_frame'):
+                            text_frame = content_placeholder.text_frame
+                            text_frame.clear()
+                            
+                            # 设置第一个段落
+                            if len(text_frame.paragraphs) > 0:
+                                p = text_frame.paragraphs[0]
+                            else:
+                                p = text_frame.add_paragraph()
+                            
+                            p.text = slide_data['points'][0]
+                            p.level = 0
+                            
+                            # 添加其他要点
+                            for point in slide_data['points'][1:]:
+                                p = text_frame.add_paragraph()
+                                p.text = point
+                                p.level = 0
+                            
+                            content_added = True
+                except:
+                    pass
+                
+                # 方法2: 如果没有找到占位符，查找内容区域的文本框
+                if not content_added:
+                    for shape in slide.shapes:
+                        if shape != slide.shapes.title and hasattr(shape, 'text_frame'):
+                            text_frame = shape.text_frame
+                            if text_frame:
+                                try:
+                                    # 检查是否是内容位置（不在顶部）
+                                    if shape.top > slide.height * 0.15:  # 在顶部15%以下
+                                        text_frame.clear()
+                                        
+                                        # 设置第一个段落
+                                        if len(text_frame.paragraphs) > 0:
+                                            p = text_frame.paragraphs[0]
+                                        else:
+                                            p = text_frame.add_paragraph()
+                                        
+                                        p.text = slide_data['points'][0]
+                                        p.level = 0
+                                        
+                                        # 添加其他要点
+                                        for point in slide_data['points'][1:]:
+                                            p = text_frame.add_paragraph()
+                                            p.text = point
+                                            p.level = 0
+                                        
+                                        content_added = True
+                                        break
+                                except:
+                                    pass
+        
+        # 保存到内存
+        ppt_io = BytesIO()
+        prs.save(ppt_io)
+        ppt_io.seek(0)
+        
+        return send_file(
+            ppt_io,
+            mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            as_attachment=True,
+            download_name='presentation.pptx'
+        )
+    except ImportError:
+        return jsonify({
+            'success': False,
+            'message': 'PPT生成功能需要安装python-pptx库，请运行: pip install python-pptx'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'生成PPT失败: {str(e)}'
         })

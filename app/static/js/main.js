@@ -150,9 +150,37 @@ function initScrollReveal() {
     revealOnScroll(); // 初始检查
 }
 
+// 全局回车发送功能：回车发送，Shift+Enter换行
+function initEnterToSend() {
+    document.addEventListener('keydown', function(event) {
+        // 检查是否是文本域
+        if (event.target.tagName === 'TEXTAREA') {
+            const textarea = event.target;
+            
+            // 回车键且没有按Shift
+            if (event.key === 'Enter' && !event.shiftKey) {
+                // 检查是否有特定的处理函数（通过onkeydown属性）
+                if (textarea.onkeydown) {
+                    return; // 让特定处理函数处理
+                }
+                
+                // 查找最近的表单
+                const form = textarea.closest('form');
+                if (form) {
+                    event.preventDefault();
+                    // 触发表单提交
+                    const submitEvent = new Event('submit', { cancelable: true, bubbles: true });
+                    form.dispatchEvent(submitEvent);
+                }
+            }
+        }
+    });
+}
+
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     initScrollReveal();
+    initEnterToSend(); // 初始化回车发送功能
     
     // 为所有卡片添加淡入动画
     const cards = document.querySelectorAll('.article-card, .case-card, .tool-card, .model-card, .topic-card, .resource-card');

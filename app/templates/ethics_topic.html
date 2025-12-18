@@ -43,7 +43,7 @@
     <div class="comments-section">
         <h2>评论</h2>
         <form id="comment-form" onsubmit="addComment(event, {{ topic.id }})">
-            <textarea id="comment-content" placeholder="写下您的观点..." rows="4" required></textarea>
+            <textarea id="comment-content" placeholder="写下您的观点..." rows="4" required onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();document.getElementById('comment-form').dispatchEvent(new Event('submit'));}"></textarea>
             <button type="submit" class="btn btn-primary">发表评论</button>
         </form>
 

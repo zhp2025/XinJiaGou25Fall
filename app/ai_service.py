@@ -120,6 +120,7 @@ def _chat_aliyun(message, model_name='qwen-turbo'):
             {'role': 'user', 'content': message}
         ]
         
+        # 设置超时和重试
         response = Generation.call(
             model=model_name,
             messages=messages,

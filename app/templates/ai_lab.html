@@ -3,39 +3,67 @@
 {% block title %}AI实验室 - AICove{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="container">
-        <h1>AI 实验室</h1>
-        <p>在沙盒环境中体验各种 AI 模型的能力</p>
-    </div>
-</div>
-
 <div class="container">
+    <!-- 面包屑导航 -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('main.index') }}">首页</a> >
+        <a href="{{ url_for('main.ai_lab') }}">AI实验室</a> >
+        <span id="breadcrumb-current">AI"游乐场"</span>
+    </nav>
+
+    <!-- 标签按钮 -->
     <div class="lab-tabs">
-        <button class="tab-btn active" onclick="switchTab('playground', this)">AI 游乐场</button>
-        <button class="tab-btn" onclick="switchTab('insight', this)">模型透视</button>
+        <button class="tab-btn active" onclick="switchTab('playground', this)">
+            <span class="tab-icon">🚀</span>
+            <span>AI"游乐场"</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('insight', this)">
+            <span class="tab-icon">🕐</span>
+            <span>模型透视</span>
+        </button>
     </div>
 
     <!-- AI 游乐场 -->
     <div id="playground-tab" class="tab-content active">
-        <div class="playground-container">
-            <div class="model-selector">
-                <label>选择模型：</label>
-                <select id="model-select">
-                    <!-- 模型选项将通过JavaScript动态加载 -->
-                </select>
-                <div id="model-info" class="model-info"></div>
+        <div class="content-layout">
+            <div class="sidebar-left">
+                <h3 class="sidebar-title">功能列表</h3>
+                <ul class="sidebar-list">
+                    <li class="sidebar-item" onclick="showPlaygroundTool('image-gen', this)">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="return false;">图像生成</a>
+                    </li>
+                    <li class="sidebar-item" onclick="showPlaygroundTool('writing', this)">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="return false;">写作</a>
+                    </li>
+                    <li class="sidebar-item" onclick="showPlaygroundTool('translation', this)">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="return false;">翻译</a>
+                    </li>
+                    <li class="sidebar-item" onclick="showPlaygroundTool('programming', this)">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="return false;">编程</a>
+                    </li>
+                    <li class="sidebar-item" onclick="showPlaygroundTool('research', this)">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="return false;">深入研究</a>
+                    </li>
+                    <li class="sidebar-item" onclick="showPlaygroundTool('ppt', this)">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="return false;">PPT制作</a>
+                    </li>
+                </ul>
             </div>
-
-            <div class="chat-container">
-                <div id="chat-messages" class="chat-messages">
-                    <div class="message system">
-                        <p>欢迎使用 AI 游乐场！您可以在这里与不同的 AI 模型对话，体验它们的能力。</p>
+            <div class="content-main">
+                <!-- 工具工作区 -->
+                <div id="playground-workspace" class="playground-workspace">
+                    <div class="workspace-header">
+                        <h2 id="workspace-title">选择左侧功能开始使用</h2>
                     </div>
-                </div>
-                <div class="chat-input-container">
-                    <textarea id="chat-input" placeholder="输入您的问题..." rows="3"></textarea>
-                    <button onclick="sendMessage()" class="btn btn-primary">发送</button>
+                    <div id="workspace-content" class="workspace-content">
+                        <p class="workspace-placeholder">请从左侧功能列表中选择一个工具开始使用</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -43,8 +71,30 @@
 
     <!-- 模型透视 -->
     <div id="insight-tab" class="tab-content">
-        <div class="insight-container">
-            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem; font-size: 1.8rem; text-align: center; font-weight: 600;">神经网络工作机制</h2>
+        <div class="content-layout">
+            <div class="sidebar-left">
+                <h3 class="sidebar-title">主题列表</h3>
+                <ul class="sidebar-list">
+                    <li class="sidebar-item" onclick="showInsightTopic('neural-network', this)">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="return false;">神经网络工作机制</a>
+                    </li>
+                    <li class="sidebar-item" onclick="showInsightTopic('word-vector', this)">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="return false;">词向量空间</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="content-main">
+                <!-- 默认提示 -->
+                <div id="insight-placeholder" class="insight-placeholder">
+                    <p style="text-align: center; color: #999; padding: 3rem; font-size: 1.1rem;">请从左侧主题列表中选择一个主题查看</p>
+                </div>
+                
+                <!-- 神经网络工作机制 -->
+                <div id="neural-network-content" class="insight-topic-content" style="display: none;">
+                    <div class="insight-container">
+                        <h2 style="color: var(--primary-color); margin-bottom: 1.5rem; font-size: 1.8rem; text-align: center; font-weight: 600;">神经网络工作机制</h2>
             <div class="visualization-area">
                 <canvas id="neural-network-canvas" width="1200" height="450"></canvas>
             </div>
@@ -118,36 +168,240 @@
                 </div>
             </div>
         </div>
+                
+        <!-- 词向量空间 -->
+        <div id="word-vector-content" class="insight-topic-content" style="display: none;">
+            <div class="insight-container">
+                <h2 style="color: var(--primary-color); margin-bottom: 1.5rem; font-size: 1.8rem; text-align: center; font-weight: 600;">词向量空间</h2>
+                <div class="visualization-area">
+                    <canvas id="word-vector-canvas-main" width="800" height="400"></canvas>
+                </div>
+                <div class="info-box" style="margin-top: 1.5rem; padding: 1rem 1.25rem; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border-left: 4px solid var(--primary-color); border-radius: 4px; font-size: 0.9rem; line-height: 1.6;">
+                    <strong style="color: var(--primary-color);">说明：</strong>词向量将词语映射到高维空间，语义相近的词在空间中距离更近。通过这种方式，AI模型可以理解词语之间的语义关系。
+                </div>
+            </div>
+        </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
+/* 游乐场工作区 */
+.playground-workspace {
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    min-height: 500px;
+}
+
+.workspace-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: #f5f5f5;
+}
+
+.workspace-header h2 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.3rem;
+}
+
+.workspace-content {
+    padding: 2rem;
+}
+
+.workspace-placeholder {
+    text-align: center;
+    color: var(--text-light);
+    padding: 3rem;
+    font-size: 1.1rem;
+}
+
+.tool-interface {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.tool-model-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.tool-model-selector label {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.tool-model-selector select {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+.tool-input-area {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tool-input-area textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.tool-output-area {
+    min-height: 300px;
+    padding: 1rem;
+    background: #f5f5f5;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.tool-output-area img {
+    max-width: 100%;
+    border-radius: 4px;
+    margin-top: 1rem;
+}
+
+.conversation-history {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f5f5f5;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.conversation-message {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.conversation-message.user-message {
+    border-left: 3px solid var(--primary-color);
+}
+
+.conversation-message.assistant-message {
+    border-left: 3px solid var(--secondary-color);
+}
+
+.conversation-message strong {
+    color: var(--primary-color);
+    margin-right: 0.5rem;
+}
+
+.tool-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+/* 模型透视主题内容 */
+.insight-topic-content {
+    display: none;
+}
+
+.insight-topic-content.active {
+    display: block;
+}
+
 .lab-tabs {
     display: flex;
-    gap: 1.5rem;
-    margin: 2rem 0;
-    border-bottom: 3px solid var(--border-color);
+    gap: 1rem;
+    margin: 1.5rem 0;
+    border-bottom: 2px solid var(--border-color);
 }
 
 .tab-btn {
-    padding: 1rem 2.5rem;
-    background: none;
-    border: none;
-    border-bottom: 4px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
     cursor: pointer;
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--text-light);
-    transition: all 0.3s ease;
-    position: relative;
-    bottom: -3px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    color: var(--text-color);
+}
+
+.tab-btn:hover {
+    background: #f5f5f5;
 }
 
 .tab-btn.active {
+    background: white;
+    border-color: var(--primary-color);
+    border-bottom: 2px solid white;
     color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
+    position: relative;
+    top: 2px;
+}
+
+.tab-icon {
+    font-size: 1.2rem;
+}
+
+/* 游乐场网格 */
+.playground-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.playground-card {
+    aspect-ratio: 1;
+    background: #f5f5f5;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+}
+
+.playground-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* 分页点 */
+.page-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-color);
+    display: inline-block;
+    margin: 0 0.25rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.page-dot.active {
+    background: var(--primary-color);
+    width: 12px;
+    height: 12px;
 }
 
 .tab-content {
@@ -564,10 +818,436 @@ function updateModelInfo(model) {
     }
 }
 
+// 模型透视主题切换
+function showInsightTopic(topicId, element) {
+    // 移除所有活动状态
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // 添加当前活动状态
+    if (element) {
+        element.classList.add('active');
+    }
+    
+    // 隐藏占位符
+    const placeholder = document.getElementById('insight-placeholder');
+    if (placeholder) {
+        placeholder.style.display = 'none';
+    }
+    
+    // 隐藏所有主题内容
+    document.querySelectorAll('.insight-topic-content').forEach(content => {
+        content.style.display = 'none';
+        content.classList.remove('active');
+    });
+    
+    // 显示选中的主题内容
+    const contentId = topicId + '-content';
+    const content = document.getElementById(contentId);
+    if (content) {
+        content.style.display = 'block';
+        content.classList.add('active');
+        
+        // 如果是神经网络，初始化可视化
+        if (topicId === 'neural-network') {
+            setTimeout(() => {
+                initNeuralNetwork();
+            }, 100);
+        } else if (topicId === 'word-vector') {
+            setTimeout(() => {
+                // 初始化词向量空间主画布
+                const canvas = document.getElementById('word-vector-canvas-main');
+                if (canvas && !window.wordVectorMainDemo) {
+                    window.wordVectorMainDemo = new WordVectorVisualizer(canvas);
+                    window.wordVectorMainDemo.draw();
+                }
+            }, 100);
+        }
+    }
+}
+
+// AI游乐场工具切换
+function showPlaygroundTool(toolType, element) {
+    // 移除所有活动状态
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // 添加当前活动状态
+    if (element) {
+        element.classList.add('active');
+    }
+    
+    const toolNames = {
+        'image-gen': '图像生成',
+        'writing': '写作',
+        'translation': '翻译',
+        'programming': '编程',
+        'research': '深入研究',
+        'ppt': 'PPT制作'
+    };
+    
+    const toolName = toolNames[toolType] || '工具';
+    document.getElementById('workspace-title').textContent = toolName;
+    
+    // 生成工具界面
+    const workspaceContent = document.getElementById('workspace-content');
+    workspaceContent.innerHTML = generateToolInterface(toolType);
+    
+    // 更新面包屑
+    document.getElementById('breadcrumb-current').textContent = toolName;
+}
+
+
+// 生成工具界面
+function generateToolInterface(toolType) {
+    const toolNames = {
+        'image-gen': '图像生成',
+        'writing': '写作',
+        'translation': '翻译',
+        'programming': '编程',
+        'research': '深入研究',
+        'ppt': 'PPT制作'
+    };
+    
+    const placeholders = {
+        'image-gen': '描述你想要生成的图像，例如：一只可爱的小猫坐在窗台上，阳光洒在它身上',
+        'writing': '描述你的写作需求，例如：写一篇关于人工智能发展的文章',
+        'translation': '输入需要翻译的文本',
+        'programming': '描述你的编程需求，例如：写一个Python函数来计算斐波那契数列',
+        'research': '提出你的研究问题，例如：深度学习的未来发展趋势是什么？',
+        'ppt': '描述你的PPT主题和需求，例如：制作一个关于AI基础知识的PPT，包含5个章节'
+    };
+    
+    const toolName = toolNames[toolType] || '工具';
+    const placeholder = placeholders[toolType] || '输入你的需求...';
+    
+    let downloadButton = '';
+    let conversationArea = '';
+    
+    if (toolType === 'ppt') {
+        downloadButton = '<button class="btn btn-primary" onclick="downloadPPT()" id="download-ppt-btn" style="display:none;">下载PPT</button>';
+    } else if (toolType === 'programming') {
+        downloadButton = '<button class="btn btn-primary" onclick="downloadCode()" id="download-code-btn" style="display:none;">下载代码</button>';
+        conversationArea = `
+            <div class="conversation-history" id="conversation-history" style="max-height: 400px; overflow-y: auto; margin-bottom: 1rem; padding: 1rem; background: #f5f5f5; border-radius: 8px; display: none;">
+                <div id="conversation-messages"></div>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="tool-interface">
+            <div class="tool-model-selector">
+                <label>选择模型：</label>
+                <select id="tool-model-select">
+                    <option value="aliyun-qwen-turbo">通义千问 Turbo</option>
+                    <option value="aliyun-qwen-plus">通义千问 Plus</option>
+                    <option value="aliyun-qwen-max">通义千问 Max</option>
+                    <option value="deepseek-chat">DeepSeek Chat</option>
+                    <option value="kimi-moonshot-v1-8k">Kimi Chat</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="gemini-pro">Gemini Pro</option>
+                    <option value="openai-gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    <option value="openai-gpt-4">GPT-4</option>
+                </select>
+            </div>
+            ${conversationArea}
+            <div class="tool-input-area">
+                <textarea id="tool-input" placeholder="${placeholder}" rows="8" onkeydown="handleTextareaKeydown(event, '${toolType}')"></textarea>
+                <div class="tool-actions">
+                    <button class="btn btn-primary" onclick="executeTool('${toolType}')">执行</button>
+                    ${toolType === 'programming' ? '<button class="btn btn-outline" onclick="clearConversation()" id="clear-conversation-btn" style="display:none;">清空对话</button>' : ''}
+                    ${downloadButton}
+                </div>
+            </div>
+            <div class="tool-output-area" id="tool-output">
+                <p style="color: #999; text-align: center; padding: 2rem;">输出结果将显示在这里</p>
+            </div>
+        </div>
+    `;
+}
+
+// 存储对话历史
+window.conversationHistory = {};
+
+// 执行工具
+function executeTool(toolType) {
+    const input = document.getElementById('tool-input').value.trim();
+    const model = document.getElementById('tool-model-select').value;
+    const outputArea = document.getElementById('tool-output');
+    
+    if (!input) {
+        alert('请输入内容');
+        return;
+    }
+    
+    // 如果是编程工具，显示对话历史
+    if (toolType === 'programming') {
+        const conversationHistory = document.getElementById('conversation-history');
+        const conversationMessages = document.getElementById('conversation-messages');
+        if (conversationHistory && conversationMessages) {
+            conversationHistory.style.display = 'block';
+            // 添加用户消息
+            const userMsg = document.createElement('div');
+            userMsg.className = 'conversation-message user-message';
+            userMsg.innerHTML = `<strong>您：</strong> ${input}`;
+            conversationMessages.appendChild(userMsg);
+            conversationHistory.scrollTop = conversationHistory.scrollHeight;
+        }
+    }
+    
+    outputArea.innerHTML = '<p style="text-align: center; color: #666;">处理中，请稍候...</p>';
+    
+    // 获取对话历史（仅编程工具）
+    const conversation = toolType === 'programming' ? (window.conversationHistory[model] || []) : [];
+    
+    fetch(`/api/playground/${toolType}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            input: input,
+            model: model,
+            conversation: conversation
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 如果是编程工具，保存对话历史
+            if (toolType === 'programming') {
+                if (!window.conversationHistory[model]) {
+                    window.conversationHistory[model] = [];
+                }
+                window.conversationHistory[model].push({
+                    role: 'user',
+                    content: input
+                });
+                window.conversationHistory[model].push({
+                    role: 'assistant',
+                    content: data.output
+                });
+                
+                // 显示对话历史
+                const conversationMessages = document.getElementById('conversation-messages');
+                if (conversationMessages) {
+                    const assistantMsg = document.createElement('div');
+                    assistantMsg.className = 'conversation-message assistant-message';
+                    assistantMsg.innerHTML = `<strong>AI：</strong> ${data.output.substring(0, 200)}${data.output.length > 200 ? '...' : ''}`;
+                    conversationMessages.appendChild(assistantMsg);
+                    const conversationHistory = document.getElementById('conversation-history');
+                    if (conversationHistory) {
+                        conversationHistory.scrollTop = conversationHistory.scrollHeight;
+                    }
+                }
+                
+                // 显示清空对话按钮
+                const clearBtn = document.getElementById('clear-conversation-btn');
+                if (clearBtn) {
+                    clearBtn.style.display = 'inline-block';
+                }
+            }
+            
+            if (toolType === 'image-gen') {
+                // 图像生成只显示提示词
+                outputArea.innerHTML = `
+                    <div style="margin-bottom: 1rem;">
+                        <strong>优化后的图像生成提示词：</strong>
+                    </div>
+                    <div style="background: white; padding: 1rem; border-radius: 4px; border: 1px solid #ddd;">
+                        <pre style="white-space: pre-wrap; word-wrap: break-word;">${data.output}</pre>
+                    </div>
+                    <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                        提示：您可以使用上述提示词在图像生成工具（如DALL-E、Midjourney等）中生成图像。
+                    </p>
+                `;
+            } else if (toolType === 'ppt') {
+                // PPT制作显示内容并提供下载
+                outputArea.innerHTML = `
+                    <div style="margin-bottom: 1rem;">
+                        <strong>PPT内容：</strong>
+                    </div>
+                    <div style="background: white; padding: 1rem; border-radius: 4px; border: 1px solid #ddd; white-space: pre-wrap; word-wrap: break-word;">${data.output}</div>
+                `;
+                // 保存PPT内容到全局变量
+                window.currentPPTContent = data.output;
+                // 显示下载按钮
+                const downloadBtn = document.getElementById('download-ppt-btn');
+                if (downloadBtn) {
+                    downloadBtn.style.display = 'inline-block';
+                }
+            } else if (toolType === 'programming') {
+                // 编程工具显示代码并提供下载
+                outputArea.innerHTML = `
+                    <div style="background: white; padding: 1rem; border-radius: 4px; border: 1px solid #ddd; white-space: pre-wrap; word-wrap: break-word; font-family: 'Courier New', monospace;">${data.output}</div>
+                `;
+                // 保存代码内容到全局变量
+                window.currentCodeContent = data.output;
+                window.currentCodeLanguage = data.language || 'txt';
+                // 显示下载按钮
+                const downloadBtn = document.getElementById('download-code-btn');
+                if (downloadBtn) {
+                    downloadBtn.style.display = 'inline-block';
+                }
+            } else {
+                // 其他工具直接显示输出
+                outputArea.innerHTML = `
+                    <div style="background: white; padding: 1rem; border-radius: 4px; border: 1px solid #ddd; white-space: pre-wrap; word-wrap: break-word;">${data.output}</div>
+                `;
+            }
+        } else {
+            outputArea.innerHTML = `<p style="color: #f44336;">错误：${data.message}</p>`;
+        }
+        
+        // 清空输入框
+        document.getElementById('tool-input').value = '';
+    })
+    .catch(error => {
+        outputArea.innerHTML = `<p style="color: #f44336;">请求失败：${error.message}</p>`;
+    });
+}
+
+// 清空对话历史
+function clearConversation() {
+    const model = document.getElementById('tool-model-select').value;
+    if (window.conversationHistory[model]) {
+        delete window.conversationHistory[model];
+    }
+    const conversationMessages = document.getElementById('conversation-messages');
+    if (conversationMessages) {
+        conversationMessages.innerHTML = '';
+    }
+    const conversationHistory = document.getElementById('conversation-history');
+    if (conversationHistory) {
+        conversationHistory.style.display = 'none';
+    }
+    const clearBtn = document.getElementById('clear-conversation-btn');
+    if (clearBtn) {
+        clearBtn.style.display = 'none';
+    }
+}
+
+// 下载代码
+function downloadCode() {
+    if (!window.currentCodeContent) {
+        alert('没有可下载的代码内容');
+        return;
+    }
+    
+    const language = window.currentCodeLanguage || 'txt';
+    const extension = getFileExtension(language);
+    
+    fetch('/api/playground/code/download', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            code: window.currentCodeContent,
+            language: language,
+            extension: extension
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        }
+        return response.json().then(data => {
+            throw new Error(data.message || '下载失败');
+        });
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `code.${extension}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    })
+    .catch(error => {
+        alert('下载失败：' + error.message);
+    });
+}
+
+// 获取文件扩展名
+function getFileExtension(language) {
+    const extensionMap = {
+        'python': 'py',
+        'javascript': 'js',
+        'typescript': 'ts',
+        'java': 'java',
+        'cpp': 'cpp',
+        'c': 'c',
+        'csharp': 'cs',
+        'go': 'go',
+        'rust': 'rs',
+        'php': 'php',
+        'ruby': 'rb',
+        'swift': 'swift',
+        'kotlin': 'kt',
+        'html': 'html',
+        'css': 'css',
+        'sql': 'sql',
+        'bash': 'sh',
+        'shell': 'sh',
+        'json': 'json',
+        'xml': 'xml',
+        'yaml': 'yml',
+        'markdown': 'md',
+        'txt': 'txt'
+    };
+    return extensionMap[language.toLowerCase()] || 'txt';
+}
+
+// 下载PPT
+function downloadPPT() {
+    if (!window.currentPPTContent) {
+        alert('没有可下载的PPT内容');
+        return;
+    }
+    
+    fetch('/api/playground/ppt/download', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            content: window.currentPPTContent
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        }
+        return response.json().then(data => {
+            throw new Error(data.message || '下载失败');
+        });
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'presentation.pptx';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    })
+    .catch(error => {
+        alert('下载失败：' + error.message);
+    });
+}
+
 function switchTab(tabName, buttonElement) {
     // 隐藏所有标签页
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
+        tab.style.display = 'none';
     });
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -577,11 +1257,22 @@ function switchTab(tabName, buttonElement) {
     const tabElement = document.getElementById(tabName + '-tab');
     if (tabElement) {
         tabElement.classList.add('active');
+        tabElement.style.display = 'block';
     }
     
     // 激活按钮
     if (buttonElement) {
         buttonElement.classList.add('active');
+    }
+    
+    // 更新面包屑
+    const breadcrumbMap = {
+        'playground': 'AI"游乐场"',
+        'insight': '模型透视'
+    };
+    const currentBreadcrumb = document.getElementById('breadcrumb-current');
+    if (currentBreadcrumb && breadcrumbMap[tabName]) {
+        currentBreadcrumb.textContent = breadcrumbMap[tabName];
     }
     
     // 如果切换到模型透视标签页，重新初始化所有可视化并启动动画
@@ -2036,6 +2727,15 @@ document.addEventListener('DOMContentLoaded', function() {
             initWordVectorDemo();
         }, 250);
     });
+    
+    // 处理文本域回车键：回车发送，Shift+Enter换行
+    window.handleTextareaKeydown = function(event, toolType) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            executeTool(toolType);
+        }
+        // Shift+Enter 允许默认行为（换行）
+    };
 });
 </script>
 {% endblock %}

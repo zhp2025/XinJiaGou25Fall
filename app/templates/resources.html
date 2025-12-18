@@ -3,80 +3,122 @@
 {% block title %}资源中心 - AICove{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="container">
-        <h1>资源中心</h1>
-        <p>AI 术语表、推荐阅读与优质课程</p>
-    </div>
-</div>
-
 <div class="container">
+    <!-- 面包屑导航 -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('main.index') }}">首页</a> >
+        <a href="{{ url_for('main.resources') }}">资源中心</a> >
+        <span id="breadcrumb-current">AI术语表</span>
+    </nav>
+
+    <!-- 标签按钮 -->
     <div class="resources-tabs">
-        <button class="tab-btn active" onclick="switchTab('glossary')">AI术语表</button>
-        <button class="tab-btn" onclick="switchTab('reading')">推荐阅读</button>
+        <button class="tab-btn active" onclick="switchTab('glossary', this)">
+            <span class="tab-icon">≡</span>
+            <span>AI术语表</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('reading', this)">
+            <span class="tab-icon">📖</span>
+            <span>推荐阅读</span>
+        </button>
     </div>
 
     <!-- AI术语表 -->
     <div id="glossary-tab" class="tab-content active">
-        <div class="glossary-search">
-            <input type="text" id="term-search" placeholder="搜索术语..." onkeyup="searchTerms()">
-        </div>
-        
-        <div class="alphabet-nav">
-            {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
-            <a href="#{{ letter }}" class="alphabet-link">{{ letter }}</a>
-            {% endfor %}
-        </div>
-
-        <div class="terms-list">
-            {% for term in terms %}
-            <div class="term-item" data-letter="{{ term.term[0].upper() }}" data-term="{{ term.term.lower() }}">
-                <h3 id="{{ term.term[0].upper() }}">{{ term.term }}</h3>
-                <p class="term-definition">{{ term.definition }}</p>
-                {% if term.category %}
-                <span class="term-category">{{ term.category }}</span>
-                {% endif %}
-                {% if term.examples %}
-                <div class="term-examples">
-                    <strong>示例：</strong>{{ term.examples }}
-                </div>
-                {% endif %}
+        <div class="content-layout">
+            <div class="sidebar-left">
+                <h3 class="sidebar-title">术语列表</h3>
+                <ul class="sidebar-list">
+                    {% for term in terms[:10] %}
+                    <li class="sidebar-item {% if loop.first %}active{% endif %}">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="showTerm({{ term.id }}); return false;">{{ term.term }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
             </div>
-            {% endfor %}
+            <div class="content-main">
+                <div class="terms-content">
+                    {% for term in terms[:5] %}
+                    <div class="term-card">
+                        <h3>{{ term.term }}</h3>
+                        <p class="term-definition">{{ term.definition }}</p>
+                        {% if term.category %}
+                        <span class="term-category">{{ term.category }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- 分页 -->
+                <div class="pagination">
+                    <span class="page-number active">1</span>
+                    <span class="page-number">2</span>
+                    <span class="page-number">3</span>
+                    <span class="page-ellipsis">...</span>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- 推荐阅读 -->
     <div id="reading-tab" class="tab-content">
-        <div class="reading-filters">
-            <button class="filter-btn active" onclick="filterResources('all')">全部</button>
-            <button class="filter-btn" onclick="filterResources('书籍')">书籍</button>
-            <button class="filter-btn" onclick="filterResources('论文')">论文</button>
-            <button class="filter-btn" onclick="filterResources('期刊')">期刊</button>
-            <button class="filter-btn" onclick="filterResources('课程')">课程</button>
-        </div>
-
-        <div class="resources-grid">
-            {% for resource in resources %}
-            <div class="resource-card card-animate hover-lift" data-type="{{ resource.type }}">
-                {% if resource.cover_image %}
-                <img src="{{ resource.cover_image }}" alt="{{ resource.title }}" class="resource-cover">
-                {% endif %}
-                <div class="resource-content">
-                    <h3>{{ resource.title }}</h3>
-                    {% if resource.author %}
-                    <p class="resource-author">作者：{{ resource.author }}</p>
-                    {% endif %}
-                    <p class="resource-description">{{ resource.description[:150] }}...</p>
-                    <div class="resource-footer">
-                        <span class="resource-type">{{ resource.type }}</span>
-                        {% if resource.url %}
-                        <a href="{{ resource.url }}" target="_blank" class="btn btn-primary btn-small">查看</a>
+        <div class="content-layout">
+            <div class="sidebar-left">
+                <h3 class="sidebar-title">分类列表</h3>
+                <ul class="sidebar-list">
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterResources('全部'); return false;">全部</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterResources('书籍'); return false;">书籍</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterResources('论文'); return false;">论文</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterResources('期刊'); return false;">期刊</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterResources('课程'); return false;">课程</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="content-main">
+                <div class="resources-list">
+                    {% for resource in resources %}
+                    <div class="resource-card card-animate hover-lift" data-type="{{ resource.type }}">
+                        {% if resource.cover_image %}
+                        <img src="{{ resource.cover_image }}" alt="{{ resource.title }}" class="resource-cover">
                         {% endif %}
+                        <div class="resource-content">
+                            <h3>{{ resource.title }}</h3>
+                            {% if resource.author %}
+                            <p class="resource-author">作者：{{ resource.author }}</p>
+                            {% endif %}
+                            <p class="resource-description">{{ resource.description[:150] }}...</p>
+                            <div class="resource-footer">
+                                <span class="resource-type">{{ resource.type }}</span>
+                                {% if resource.url %}
+                                <a href="{{ resource.url }}" target="_blank" class="btn btn-primary btn-small">查看</a>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
+                    {% endfor %}
+                </div>
+                <!-- 分页 -->
+                <div class="pagination">
+                    <span class="page-number active">1</span>
+                    <span class="page-number">2</span>
+                    <span class="page-number">3</span>
+                    <span class="page-ellipsis">...</span>
                 </div>
             </div>
-            {% endfor %}
         </div>
     </div>
 </div>
@@ -86,32 +128,62 @@
 <style>
 .resources-tabs {
     display: flex;
-    gap: 1.5rem;
-    margin: 2rem 0;
-    border-bottom: 3px solid var(--border-color);
+    gap: 1rem;
+    margin: 1.5rem 0;
+    border-bottom: 2px solid var(--border-color);
 }
 
 .tab-btn {
-    padding: 1rem 2.5rem;
-    background: none;
-    border: none;
-    border-bottom: 4px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
     cursor: pointer;
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--text-light);
-    transition: all 0.3s ease;
-    position: relative;
-    bottom: -3px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    color: var(--text-color);
 }
 
 .tab-btn:hover {
-    color: var(--primary-color);
+    background: #f5f5f5;
 }
 
 .tab-btn.active {
+    background: white;
+    border-color: var(--primary-color);
+    border-bottom: 2px solid white;
     color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
+    position: relative;
+    top: 2px;
+}
+
+.tab-icon {
+    font-size: 1.2rem;
+}
+
+.terms-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.term-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.resources-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .tab-content {
@@ -269,16 +341,43 @@
 
 {% block extra_js %}
 <script>
-function switchTab(tabName) {
+function switchTab(tabName, buttonElement) {
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
+        tab.style.display = 'none';
     });
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     
-    document.getElementById(tabName + '-tab').classList.add('active');
-    event.target.classList.add('active');
+    const tabElement = document.getElementById(tabName + '-tab');
+    if (tabElement) {
+        tabElement.classList.add('active');
+        tabElement.style.display = 'block';
+    }
+    
+    if (buttonElement) {
+        buttonElement.classList.add('active');
+    }
+    
+    // 更新面包屑
+    const breadcrumbMap = {
+        'glossary': 'AI术语表',
+        'reading': '推荐阅读'
+    };
+    const currentBreadcrumb = document.getElementById('breadcrumb-current');
+    if (currentBreadcrumb && breadcrumbMap[tabName]) {
+        currentBreadcrumb.textContent = breadcrumbMap[tabName];
+    }
+}
+
+function showTerm(termId) {
+    // 更新侧边栏激活状态
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    event.target.closest('.sidebar-item').classList.add('active');
+    // 这里可以加载对应的术语内容
 }
 
 function searchTerms() {

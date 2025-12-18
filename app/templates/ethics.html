@@ -3,38 +3,59 @@
 {% block title %}伦理与未来 - AICove{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="container">
-        <h1>伦理与未来</h1>
-        <p>探讨 AI 发展中的伦理问题与未来展望</p>
-    </div>
-</div>
-
 <div class="container">
-        <div class="topics-grid">
-            {% for topic in topics %}
-            <div class="topic-card card-animate hover-lift scroll-reveal">
-            <h2><a href="{{ url_for('main.ethics_topic', slug=topic.slug) }}">{{ topic.title }}</a></h2>
-            <p class="topic-description">{{ topic.description[:200] }}...</p>
-            <div class="topic-meta">
-                <button class="like-btn" id="like-btn-{{ topic.id }}" onclick="likeTopic({{ topic.id }})">
-                    <span class="like-icon">🤍</span> <span id="likes-{{ topic.id }}">{{ topic.likes }}</span>
-                </button>
-                <a href="{{ url_for('main.ethics_topic', slug=topic.slug) }}" class="btn btn-outline">查看详情</a>
+    <!-- 面包屑导航 -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('main.index') }}">首页</a> >
+        <a href="{{ url_for('main.ethics') }}">伦理与未来</a>
+    </nav>
+
+    <div class="content-layout">
+        <div class="sidebar-left">
+            <h3 class="sidebar-title">专题列表</h3>
+            <ul class="sidebar-list">
+                {% for topic in topics %}
+                <li class="sidebar-item">
+                    <span class="sidebar-arrow">▶</span>
+                    <a href="{{ url_for('main.ethics_topic', slug=topic.slug) }}">{{ topic.title }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="content-main">
+            <div class="topics-list">
+                {% for topic in topics %}
+                <div class="topic-card card-animate hover-lift scroll-reveal">
+                    <h2><a href="{{ url_for('main.ethics_topic', slug=topic.slug) }}">{{ topic.title }}</a></h2>
+                    <p class="topic-description">{{ topic.description[:200] }}...</p>
+                    <div class="topic-meta">
+                        <button class="like-btn" id="like-btn-{{ topic.id }}" onclick="likeTopic({{ topic.id }})">
+                            <span class="like-icon">🤍</span> <span id="likes-{{ topic.id }}">{{ topic.likes }}</span>
+                        </button>
+                        <a href="{{ url_for('main.ethics_topic', slug=topic.slug) }}" class="btn btn-outline">查看详情</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <!-- 分页 -->
+            <div class="pagination">
+                <span class="page-number active">1</span>
+                <span class="page-number">2</span>
+                <span class="page-number">3</span>
+                <span class="page-ellipsis">...</span>
             </div>
         </div>
-        {% endfor %}
     </div>
 </div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
-.topics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 2rem;
-    margin: 2rem 0;
+.topics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .topic-card {
@@ -43,11 +64,6 @@
     border-radius: 8px;
     box-shadow: var(--shadow);
     transition: transform 0.3s;
-}
-
-.topic-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
 }
 
 .topic-card h2 {

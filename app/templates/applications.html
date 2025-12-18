@@ -3,85 +3,136 @@
 {% block title %}应用场景 - AICove{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="container">
-        <h1>应用场景</h1>
-        <p>探索 AI 在不同行业中的实际应用</p>
-    </div>
-</div>
-
 <div class="container">
+    <!-- 面包屑导航 -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('main.index') }}">首页</a> >
+        <a href="{{ url_for('main.applications') }}">应用场景</a> >
+        <span id="breadcrumb-current">案例库</span>
+    </nav>
+
+    <!-- 标签按钮 -->
     <div class="applications-tabs">
-        <button class="tab-btn active" onclick="switchTab('cases')">案例库</button>
-        <button class="tab-btn" onclick="switchTab('tools')">AI工具箱</button>
+        <button class="tab-btn active" onclick="switchTab('cases', this)">
+            <span class="tab-icon">📋</span>
+            <span>案例库</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('tools', this)">
+            <span class="tab-icon">🔲</span>
+            <span>AI工具箱</span>
+        </button>
     </div>
 
     <!-- 案例库 -->
     <div id="cases-tab" class="tab-content active">
-        <div class="filter-bar">
-            <button class="filter-btn active" onclick="filterCases('all')">全部</button>
-            <button class="filter-btn" onclick="filterCases('医疗')">AI+医疗</button>
-            <button class="filter-btn" onclick="filterCases('教育')">AI+教育</button>
-            <button class="filter-btn" onclick="filterCases('科研')">AI+科研</button>
-            <button class="filter-btn" onclick="filterCases('办公')">AI+办公</button>
-            <button class="filter-btn" onclick="filterCases('艺术')">AI+艺术</button>
-        </div>
-
-        <div class="cases-grid">
-            {% for case in cases %}
-            <div class="case-card card-animate hover-lift" data-industry="{{ case.industry }}">
-                {% if case.image %}
-                <img src="{{ case.image }}" alt="{{ case.title }}" class="case-image">
-                {% endif %}
-                <div class="case-content">
-                    <span class="case-industry">{{ case.industry }}</span>
-                    <h3>{{ case.title }}</h3>
-                    <p>{{ case.description[:150] }}...</p>
-                    {% if case.tags %}
-                    <div class="case-tags">
-                        {% for tag in case.tags.split(',') %}
-                        <span class="tag">{{ tag }}</span>
-                        {% endfor %}
+        <div class="content-layout">
+            <div class="sidebar-left">
+                <h3 class="sidebar-title">分类列表</h3>
+                <ul class="sidebar-list">
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterCases('艺术'); return false;">AI艺术/创意</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterCases('教育'); return false;">AI教育</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterCases('医疗'); return false;">AI医疗</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterCases('办公'); return false;">AI办公</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="content-main">
+                <div class="cases-list">
+                    {% for case in cases %}
+                    <div class="case-card card-animate hover-lift" data-industry="{{ case.industry }}">
+                        {% if case.image %}
+                        <img src="{{ case.image }}" alt="{{ case.title }}" class="case-image">
+                        {% endif %}
+                        <div class="case-content">
+                            <span class="case-industry">{{ case.industry }}</span>
+                            <h3>{{ case.title }}</h3>
+                            <p>{{ case.description[:150] }}...</p>
+                            {% if case.tags %}
+                            <div class="case-tags">
+                                {% for tag in case.tags.split(',') %}
+                                <span class="tag">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if case.external_link %}
+                            <a href="{{ case.external_link }}" target="_blank" class="btn btn-outline">查看详情</a>
+                            {% endif %}
+                        </div>
                     </div>
-                    {% endif %}
-                    {% if case.external_link %}
-                    <a href="{{ case.external_link }}" target="_blank" class="btn btn-outline">查看详情</a>
-                    {% endif %}
+                    {% endfor %}
+                </div>
+                <!-- 分页 -->
+                <div class="pagination">
+                    <span class="page-number active">1</span>
+                    <span class="page-number">2</span>
+                    <span class="page-number">3</span>
+                    <span class="page-ellipsis">...</span>
                 </div>
             </div>
-            {% endfor %}
         </div>
     </div>
 
     <!-- AI工具箱 -->
     <div id="tools-tab" class="tab-content">
-        <div class="filter-bar">
-            <button class="filter-btn active" onclick="filterTools('all')">全部</button>
-            <button class="filter-btn" onclick="filterTools('大模型')">大模型</button>
-            <button class="filter-btn" onclick="filterTools('图像生成')">图像生成</button>
-            <button class="filter-btn" onclick="filterTools('编程')">编程</button>
-        </div>
-
-        <div class="tools-grid">
-            {% for tool in tools %}
-            <div class="tool-card card-animate hover-lift" data-category="{{ tool.category }}">
-                <div class="tool-header">
-                    <div class="tool-icon">{{ tool.icon or '🔧' }}</div>
-                    <div class="tool-rating">
-                        <span>⭐ {{ tool.rating }}</span>
-                        <small>({{ tool.rating_count }} 评价)</small>
+        <div class="content-layout">
+            <div class="sidebar-left">
+                <h3 class="sidebar-title">分类列表</h3>
+                <ul class="sidebar-list">
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterTools('大模型'); return false;">大模型</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterTools('图像生成'); return false;">图像生成</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterTools('编程'); return false;">编程</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="content-main">
+                <div class="tools-list">
+                    {% for tool in tools %}
+                    <div class="tool-card card-animate hover-lift" data-category="{{ tool.category }}">
+                        <div class="tool-header">
+                            <div class="tool-icon">{{ tool.icon or '🔧' }}</div>
+                            <div class="tool-rating">
+                                <span>⭐ {{ tool.rating }}</span>
+                                <small>({{ tool.rating_count }} 评价)</small>
+                            </div>
+                        </div>
+                        <h3>{{ tool.name }}</h3>
+                        <p>{{ tool.description[:120] }}...</p>
+                        <div class="tool-footer">
+                            <span class="tool-category">{{ tool.category }}</span>
+                            {% if tool.url %}
+                            <a href="{{ tool.url }}" target="_blank" class="btn btn-primary btn-small">访问</a>
+                            {% endif %}
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
-                <h3>{{ tool.name }}</h3>
-                <p>{{ tool.description[:120] }}...</p>
-                <div class="tool-footer">
-                    <span class="tool-category">{{ tool.category }}</span>
-                    {% if tool.url %}
-                    <a href="{{ tool.url }}" target="_blank" class="btn btn-primary btn-small">访问</a>
-                    {% endif %}
+                <!-- 分页 -->
+                <div class="pagination">
+                    <span class="page-number active">1</span>
+                    <span class="page-number">2</span>
+                    <span class="page-number">3</span>
+                    <span class="page-ellipsis">...</span>
                 </div>
             </div>
-            {% endfor %}
         </div>
     </div>
 </div>
@@ -91,32 +142,48 @@
 <style>
 .applications-tabs {
     display: flex;
-    gap: 1.5rem;
-    margin: 2rem 0;
-    border-bottom: 3px solid var(--border-color);
+    gap: 1rem;
+    margin: 1.5rem 0;
+    border-bottom: 2px solid var(--border-color);
 }
 
 .tab-btn {
-    padding: 1rem 2.5rem;
-    background: none;
-    border: none;
-    border-bottom: 4px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
     cursor: pointer;
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--text-light);
-    transition: all 0.3s ease;
-    position: relative;
-    bottom: -3px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    color: var(--text-color);
 }
 
 .tab-btn:hover {
-    color: var(--primary-color);
+    background: #f5f5f5;
 }
 
 .tab-btn.active {
+    background: #f5f5f5;
+    border-color: var(--primary-color);
+    border-bottom: 2px solid white;
     color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
+    position: relative;
+    top: 2px;
+}
+
+.tab-icon {
+    font-size: 1.2rem;
+}
+
+.cases-list, .tools-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .tab-content {
@@ -150,18 +217,15 @@
     border-color: var(--primary-color);
 }
 
-.cases-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
-}
-
 .case-card {
     background: white;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: var(--shadow);
     transition: transform 0.3s;
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.5rem;
 }
 
 .case-card:hover {
@@ -170,9 +234,11 @@
 }
 
 .case-image {
-    width: 100%;
-    height: 200px;
+    width: 200px;
+    height: 150px;
     object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
 }
 
 .case-content {
@@ -203,11 +269,6 @@
     font-size: 0.8rem;
 }
 
-.tools-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 2rem;
-}
 
 .tool-card {
     background: white;
@@ -262,16 +323,34 @@
 
 {% block extra_js %}
 <script>
-function switchTab(tabName) {
+function switchTab(tabName, buttonElement) {
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
+        tab.style.display = 'none';
     });
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     
-    document.getElementById(tabName + '-tab').classList.add('active');
-    event.target.classList.add('active');
+    const tabElement = document.getElementById(tabName + '-tab');
+    if (tabElement) {
+        tabElement.classList.add('active');
+        tabElement.style.display = 'block';
+    }
+    
+    if (buttonElement) {
+        buttonElement.classList.add('active');
+    }
+    
+    // 更新面包屑
+    const breadcrumbMap = {
+        'cases': '案例库',
+        'tools': 'AI工具箱'
+    };
+    const currentBreadcrumb = document.getElementById('breadcrumb-current');
+    if (currentBreadcrumb && breadcrumbMap[tabName]) {
+        currentBreadcrumb.textContent = breadcrumbMap[tabName];
+    }
 }
 
 function filterCases(industry) {

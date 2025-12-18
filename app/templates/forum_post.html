@@ -36,7 +36,7 @@
         
         {% if current_user.is_authenticated %}
         <form id="comment-form" onsubmit="addComment(event, {{ post.id }})">
-            <textarea id="comment-content" placeholder="写下您的评论..." rows="4" required></textarea>
+            <textarea id="comment-content" placeholder="写下您的评论..." rows="4" required onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();document.getElementById('comment-form').dispatchEvent(new Event('submit'));}"></textarea>
             <button type="submit" class="btn btn-primary">发表评论</button>
         </form>
         {% else %}

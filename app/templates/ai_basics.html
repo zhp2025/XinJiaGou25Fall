@@ -3,87 +3,58 @@
 {% block title %}AI基础 - AICove{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="container">
-        <h1>AI 基础知识</h1>
-        <p>从核心概念到学习路径，全面了解人工智能</p>
-    </div>
-</div>
-
 <div class="container">
-    <!-- 核心概念 -->
-    <section class="concepts-section">
-        <h2 class="section-title">核心概念</h2>
-        <div class="concepts-grid">
-            {% for concept in core_concepts %}
-            <div class="concept-card card-animate hover-lift" onclick="showConceptDetail({{ concept.id }})">
-                <h3>{{ concept.term }}</h3>
-                <p>{{ concept.definition[:100] }}...</p>
-                <span class="concept-category">{{ concept.category }}</span>
-            </div>
-            {% endfor %}
-        </div>
-    </section>
+    <!-- 面包屑导航 -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('main.index') }}">首页</a> >
+        <a href="{{ url_for('main.ai_basics') }}">AI基础</a> >
+        <span id="breadcrumb-current">三核心概念</span>
+    </nav>
 
-    <!-- 学习路径 -->
-    <section class="learning-paths">
-        <h2 class="section-title">学习路径</h2>
-        <div class="paths-container">
-            <div class="path-card">
-                <div class="path-header">
-                    <h3>小白入门路径</h3>
-                    <span class="path-badge">适合零基础</span>
-                </div>
-                <div class="path-content">
-                    <ul>
-                        <li>AI 基础概念介绍</li>
-                        <li>常见 AI 应用场景</li>
-                        <li>视频教程：AI 入门指南</li>
-                        <li>实践项目：使用 AI 工具</li>
-                    </ul>
-                    <a href="#" class="btn btn-primary">开始学习</a>
-                </div>
-            </div>
+    <!-- 标签按钮 -->
+    <div class="tab-buttons">
+        <button class="tab-button active" onclick="switchTab('concepts', this)">
+            <span class="tab-icon">📋</span>
+            <span>三核心概念</span>
+        </button>
+        <button class="tab-button" onclick="switchTab('history', this)">
+            <span class="tab-icon">📊</span>
+            <span>AI发展史</span>
+        </button>
+        <button class="tab-button" onclick="switchTab('paths', this)">
+            <span class="tab-icon">📋</span>
+            <span>三学习路径</span>
+        </button>
+    </div>
 
-            <div class="path-card">
-                <div class="path-header">
-                    <h3>职场人应用路径</h3>
-                    <span class="path-badge">聚焦实际应用</span>
-                </div>
-                <div class="path-content">
-                    <ul>
-                        <li>AI 在工作场景中的应用</li>
-                        <li>AI 工具使用技巧</li>
-                        <li>案例学习：行业最佳实践</li>
-                        <li>提升工作效率的 AI 方法</li>
-                    </ul>
-                    <a href="#" class="btn btn-primary">开始学习</a>
-                </div>
-            </div>
-
-            <div class="path-card">
-                <div class="path-header">
-                    <h3>学生进阶路径</h3>
-                    <span class="path-badge">深入技术</span>
-                </div>
-                <div class="path-content">
-                    <ul>
-                        <li>数学基础：线性代数、概率论</li>
-                        <li>机器学习算法原理</li>
-                        <li>深度学习框架使用</li>
-                        <li>算法推导与实践</li>
-                    </ul>
-                    <a href="#" class="btn btn-primary">开始学习</a>
-                </div>
+    <!-- 核心概念标签页 -->
+    <div id="concepts-tab" class="tab-panel">
+        <div class="content-layout">
+            <div class="content-main">
+                <section class="concepts-section">
+                    <h2 class="section-title">核心概念</h2>
+                    <div class="concepts-grid">
+                        {% for concept in core_concepts %}
+                        <div class="concept-card card-animate hover-lift" onclick="showConceptDetail({{ concept.id }})">
+                            <h3>{{ concept.term }}</h3>
+                            <p>{{ concept.definition[:100] }}...</p>
+                            <span class="concept-category">{{ concept.category }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- AI发展史 -->
-    <section class="ai-history">
-        <h2 class="section-title">AI 发展史</h2>
-        <div class="timeline">
-            <div class="timeline-wrapper">
+    <!-- AI发展史标签页 -->
+    <div id="history-tab" class="tab-panel" style="display: none;">
+        <div class="content-layout">
+            <div class="content-main">
+                <section class="ai-history">
+                    <h2 class="section-title">AI 发展史</h2>
+                    <div class="timeline">
+                        <div class="timeline-wrapper">
             <div class="timeline-item">
                 <div class="timeline-year">1950-10</div>
                 <div class="timeline-content">
@@ -304,6 +275,44 @@
             </div>
         </div>
     </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- 学习路径标签页 -->
+    <div id="paths-tab" class="tab-panel" style="display: none;">
+        <div class="content-layout">
+            <div class="sidebar-left">
+                <h3 class="sidebar-title">学习路径</h3>
+                <ul class="sidebar-list">
+                    <li class="sidebar-item active">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="showPath('beginner'); return false;">"小白"学习路径</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="showPath('professional'); return false;">"职场人"应用路径</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="showPath('student'); return false;">"学生"进阶路径</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="content-main">
+                <div id="path-content" class="path-content-area">
+                    <!-- 路径内容将在这里动态显示 -->
+                </div>
+                <!-- 分页 -->
+                <div class="pagination">
+                    <span class="page-number active">1</span>
+                    <span class="page-number">2</span>
+                    <span class="page-number">3</span>
+                    <span class="page-ellipsis">...</span>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- 概念详情模态框 -->
@@ -317,6 +326,184 @@
 
 {% block extra_css %}
 <style>
+/* 面包屑导航 */
+.breadcrumb {
+    padding: 1rem 0;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.breadcrumb a {
+    color: var(--text-light);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: var(--primary-color);
+}
+
+.breadcrumb span {
+    color: var(--text-color);
+}
+
+/* 标签按钮 */
+.tab-buttons {
+    display: flex;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.tab-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+    color: var(--text-color);
+}
+
+.tab-button:hover {
+    background: #f5f5f5;
+}
+
+.tab-button.active {
+    background: white;
+    border-color: var(--primary-color);
+    border-bottom: 2px solid white;
+    color: var(--primary-color);
+    position: relative;
+    top: 2px;
+}
+
+.tab-icon {
+    font-size: 1.2rem;
+}
+
+/* 内容布局 */
+.content-layout {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.sidebar-left {
+    width: 250px;
+    flex-shrink: 0;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    height: fit-content;
+}
+
+.sidebar-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.sidebar-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-item:last-child {
+    border-bottom: none;
+}
+
+.sidebar-item a {
+    color: var(--text-color);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.3s;
+}
+
+.sidebar-item a:hover {
+    color: var(--primary-color);
+}
+
+.sidebar-item.active a {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.sidebar-arrow {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.sidebar-item.active .sidebar-arrow {
+    color: var(--primary-color);
+}
+
+.content-main {
+    flex: 1;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    min-height: 500px;
+}
+
+.path-content-area {
+    min-height: 400px;
+}
+
+/* 分页 */
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.page-number {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: var(--text-color);
+    background: white;
+}
+
+.page-number:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.page-number.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.page-ellipsis {
+    padding: 0 0.5rem;
+    color: var(--text-light);
+}
 .concepts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -406,6 +593,7 @@
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: var(--primary-color) rgba(0,0,0,0.1);
+    width: 100%;
 }
 
 .timeline::-webkit-scrollbar {
@@ -432,6 +620,8 @@
     gap: 2rem;
     min-width: max-content;
     padding-bottom: 1rem;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 .timeline:before {
@@ -476,7 +666,6 @@
     flex: 1;
     padding: 1.5rem;
     background: white;
-    margin: 0 2rem;
 }
 
 .modal {
@@ -517,6 +706,120 @@
 
 {% block extra_js %}
 <script>
+// 路径内容数据
+const pathContents = {
+    beginner: {
+        title: '"小白"学习路径',
+        items: [
+            'AI 基础概念介绍',
+            '常见 AI 应用场景',
+            '视频教程：AI 入门指南',
+            '实践项目：使用 AI 工具'
+        ]
+    },
+    professional: {
+        title: '"职场人"应用路径',
+        items: [
+            'AI 在工作场景中的应用',
+            'AI 工具使用技巧',
+            '案例学习：行业最佳实践',
+            '提升工作效率的 AI 方法'
+        ]
+    },
+    student: {
+        title: '"学生"进阶路径',
+        items: [
+            '数学基础：线性代数、概率论',
+            '机器学习算法原理',
+            '深度学习框架使用',
+            '算法推导与实践'
+        ]
+    }
+};
+
+function switchTab(tabName, buttonElement) {
+    // 隐藏所有标签页
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.style.display = 'none';
+    });
+    
+    // 移除所有按钮的active类
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // 显示选中的标签页
+    const tabPanel = document.getElementById(tabName + '-tab');
+    if (tabPanel) {
+        tabPanel.style.display = 'block';
+    }
+    
+    // 激活按钮
+    if (buttonElement) {
+        buttonElement.classList.add('active');
+    }
+    
+    // 更新面包屑
+    const breadcrumbMap = {
+        'concepts': '三核心概念',
+        'history': 'AI发展史',
+        'paths': '学习路径'
+    };
+    const currentBreadcrumb = document.getElementById('breadcrumb-current');
+    if (currentBreadcrumb && breadcrumbMap[tabName]) {
+        currentBreadcrumb.textContent = breadcrumbMap[tabName];
+    }
+    
+    // 如果切换到学习路径，显示默认路径
+    if (tabName === 'paths') {
+        showPath('beginner');
+    }
+}
+
+function showPath(pathType) {
+    const content = pathContents[pathType];
+    if (!content) return;
+    
+    const pathContentArea = document.getElementById('path-content');
+    if (!pathContentArea) return;
+    
+    // 更新侧边栏激活状态
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    const sidebarMap = {
+        'beginner': 0,
+        'professional': 1,
+        'student': 2
+    };
+    const activeIndex = sidebarMap[pathType];
+    const sidebarItems = document.querySelectorAll('.sidebar-item');
+    if (sidebarItems[activeIndex]) {
+        sidebarItems[activeIndex].classList.add('active');
+    }
+    
+    // 生成路径内容
+    let html = `<h2>${content.title}</h2>`;
+    html += '<ul class="path-items">';
+    content.items.forEach(item => {
+        html += `<li>${item}</li>`;
+    });
+    html += '</ul>';
+    html += `<a href="#" class="btn btn-primary">开始学习</a>`;
+    
+    pathContentArea.innerHTML = html;
+}
+
+// 初始化显示核心概念（默认标签页）
+document.addEventListener('DOMContentLoaded', function() {
+    // 如果当前显示的是学习路径标签页，初始化路径内容
+    const pathsTab = document.getElementById('paths-tab');
+    if (pathsTab && pathsTab.style.display !== 'none') {
+        showPath('beginner');
+    }
+});
+
 function showConceptDetail(conceptId) {
     // 这里应该从 API 获取详细信息
     document.getElementById('concept-modal').style.display = 'block';
@@ -535,5 +838,25 @@ window.onclick = function(event) {
     }
 }
 </script>
+<style>
+.path-items {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0;
+}
+
+.path-items li {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    background: #f5f5f5;
+    border-radius: 4px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.path-content-area h2 {
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+}
+</style>
 {% endblock %}
 
