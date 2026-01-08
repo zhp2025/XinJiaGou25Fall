@@ -45,13 +45,13 @@
                         <span class="sidebar-arrow">▶</span>
                         <a href="#" onclick="return false;">编程</a>
                     </li>
-                    <li class="sidebar-item" onclick="showPlaygroundTool('research', this)">
-                        <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="return false;">深入研究</a>
-                    </li>
                     <li class="sidebar-item" onclick="showPlaygroundTool('ppt', this)">
                         <span class="sidebar-arrow">▶</span>
                         <a href="#" onclick="return false;">PPT制作</a>
+                    </li>
+                    <li class="sidebar-item" style="margin-top: 1rem; border-top: 1px solid #e0e0e0; padding-top: 1rem;" onclick="showConversationHistory(this)">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="return false;">📚 历史记录</a>
                     </li>
                 </ul>
             </div>
@@ -63,6 +63,26 @@
                     </div>
                     <div id="workspace-content" class="workspace-content">
                         <p class="workspace-placeholder">请从左侧功能列表中选择一个工具开始使用</p>
+                    </div>
+                </div>
+                
+                <!-- 历史记录工作区 -->
+                <div id="history-workspace" class="playground-workspace" style="display: none;">
+                    <div class="workspace-header">
+                        <h2>对话历史记录</h2>
+                        <div style="margin-top: 1rem;">
+                            <select id="history-filter" onchange="loadConversationHistory()" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="">全部工具</option>
+                                <option value="image-gen">图像生成</option>
+                                <option value="writing">写作</option>
+                                <option value="translation">翻译</option>
+                                <option value="programming">编程</option>
+                                <option value="ppt">PPT制作</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="history-content" class="workspace-content" style="max-height: 600px; overflow-y: auto;">
+                        <p class="workspace-placeholder">正在加载历史记录...</p>
                     </div>
                 </div>
             </div>
@@ -95,89 +115,101 @@
                 <div id="neural-network-content" class="insight-topic-content" style="display: none;">
                     <div class="insight-container">
                         <h2 style="color: var(--primary-color); margin-bottom: 1.5rem; font-size: 1.8rem; text-align: center; font-weight: 600;">神经网络工作机制</h2>
-            <div class="visualization-area">
-                <canvas id="neural-network-canvas" width="1200" height="450"></canvas>
-            </div>
-            
-            <div class="parameter-controls">
-                <div class="control-group">
-                    <label>学习率：</label>
-                    <input type="range" id="learning-rate" min="0.001" max="0.1" step="0.001" value="0.01">
-                    <span id="lr-value">0.01</span>
-                </div>
-                <div class="control-group">
-                    <label>总层数：</label>
-                    <input type="number" id="total-layers" min="3" max="10" value="4" style="width: 80px; padding: 0.3rem; text-align: center;">
-                    <small style="color: #666; margin-left: 0.5rem;">范围: 3-10</small>
-                </div>
-                <div class="control-group">
-                    <label>每层神经元数：</label>
-                    <input type="text" id="neurons-per-layer" placeholder="如: 4,6,6,2" value="4,6,6,2" style="width: 180px; padding: 0.3rem; border: 1px solid var(--border-color); border-radius: 4px;">
-                </div>
-                <button onclick="updateVisualization()" class="btn btn-primary" style="white-space: nowrap; padding: 0.6rem 1.5rem; font-weight: 500;">更新可视化</button>
-            </div>
-            <div class="info-box" style="margin-top: 1.5rem; padding: 1rem 1.25rem; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border-left: 4px solid var(--primary-color); border-radius: 4px; font-size: 0.9rem; line-height: 1.6;">
-                <strong style="color: var(--primary-color);">说明：</strong>神经网络通过多层神经元处理信息。每层的神经元接收前一层的信息，经过加权和激活函数处理后传递给下一层。连接线的颜色表示权重（<span style="color: #4CAF50; font-weight: 500;">绿色为正</span>，<span style="color: #F44336; font-weight: 500;">红色为负</span>），节点的大小反映激活值。您可以调整上方的参数来观察不同配置下神经网络的结构变化。
-            </div>
+                        
+                        <!-- 基础神经网络可视化 -->
+                        <div class="insight-section">
+                            <h3>基础神经网络结构</h3>
+                            <p class="section-description">神经网络通过多层神经元处理信息。每层的神经元接收前一层的信息，经过加权和激活函数处理后传递给下一层。</p>
+                            <div class="visualization-area">
+                                <canvas id="neural-network-canvas" width="1200" height="450"></canvas>
+                            </div>
+                            <div class="parameter-controls">
+                                <div class="control-group">
+                                    <label>学习率：</label>
+                                    <input type="range" id="learning-rate" min="0.001" max="0.1" step="0.001" value="0.01">
+                                    <span id="lr-value">0.01</span>
+                                </div>
+                                <div class="control-group">
+                                    <label>总层数：</label>
+                                    <input type="number" id="total-layers" min="3" max="10" value="4" style="width: 80px; padding: 0.3rem; text-align: center;">
+                                    <small style="color: #666; margin-left: 0.5rem;">范围: 3-10</small>
+                                </div>
+                                <div class="control-group">
+                                    <label>每层神经元数：</label>
+                                    <input type="text" id="neurons-per-layer" placeholder="如: 4,6,6,2" value="4,6,6,2" style="width: 180px; padding: 0.3rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                                </div>
+                                <button onclick="updateVisualization()" class="btn btn-primary" style="white-space: nowrap; padding: 0.6rem 1.5rem; font-weight: 500;">更新可视化</button>
+                            </div>
+                            <div class="info-box">
+                                <strong>工作原理：</strong>连接线的颜色表示权重（<span style="color: #4CAF50; font-weight: 500;">绿色为正</span>，<span style="color: #F44336; font-weight: 500;">红色为负</span>），节点的大小反映激活值。您可以调整上方的参数来观察不同配置下神经网络的结构变化。
+                            </div>
+                        </div>
 
-            <!-- 卷积池化层 - 独立占满整行 -->
-            <div class="insight-section conv-pool-section">
-                    <h3>卷积池化层</h3>
-                    <p>卷积层通过卷积操作提取特征，池化层降低数据维度，提高计算效率。</p>
-                <div class="demo-box conv-pool-demo-box">
-                    <canvas id="conv-pool-canvas" width="1000" height="500"></canvas>
-                    <div id="conv-explanation" class="demo-explanation" style="font-size: 0.9rem; color: #555; margin-top: 0.75rem; min-height: 45px; padding: 0.5rem; background: #F8F9FA; border-radius: 4px; text-align: center; line-height: 1.5;">
-                        点击"开始演示"查看卷积核如何滑动提取特征
-                </div>
-                    <div class="demo-controls">
-                        <button onclick="startConvDemo()" class="btn-small">开始演示</button>
-                        <button onclick="resetConvDemo()" class="btn-small">重置</button>
+                        <!-- 卷积池化层 -->
+                        <div class="insight-section conv-pool-section">
+                            <h3>卷积池化层</h3>
+                            <p class="section-description">卷积层通过卷积操作提取特征，池化层降低数据维度，提高计算效率。这是CNN（卷积神经网络）的核心组件。</p>
+                            <div class="demo-box conv-pool-demo-box">
+                                <canvas id="conv-pool-canvas" width="1000" height="500"></canvas>
+                                <div id="conv-explanation" class="demo-explanation">
+                                    <strong>说明：</strong>卷积核在输入图像上滑动，通过点积运算提取局部特征。池化层（如最大池化）选择每个区域的最大值，减少数据量同时保留重要特征。
+                                </div>
+                                <div class="demo-controls">
+                                    <button onclick="startConvDemo()" class="btn-small">开始演示</button>
+                                    <button onclick="resetConvDemo()" class="btn-small">重置</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 全连接网络 -->
+                        <div class="insight-section">
+                            <h3>全连接网络</h3>
+                            <p class="section-description">全连接层将提取的特征映射到最终的输出空间，完成分类或回归任务。每个神经元都与前一层的所有神经元相连。</p>
+                            <div class="demo-box">
+                                <canvas id="fc-network-canvas" width="350" height="280"></canvas>
+                                <div id="fc-explanation" class="demo-explanation">
+                                    <strong>说明：</strong>信号从前层传播到后层，每个神经元计算加权和并通过激活函数输出。这是深度学习的核心机制。
+                                </div>
+                                <div class="demo-controls">
+                                    <button onclick="startFCDemo()" class="btn-small">开始演示</button>
+                                    <button onclick="resetFCDemo()" class="btn-small">重置</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- 全连接网络和词向量空间 - 横向并排在下方 -->
-            <div class="insight-sections-bottom">
+                
+        <!-- 词向量空间 -->
+        <div id="word-vector-content" class="insight-topic-content" style="display: none;">
+            <div class="insight-container">
+                <h2 style="color: var(--primary-color); margin-bottom: 1.5rem; font-size: 1.8rem; text-align: center; font-weight: 600;">词向量空间</h2>
+                
+                <!-- 词向量可视化 -->
                 <div class="insight-section">
-                    <h3>全连接网络</h3>
-                    <p>全连接层将提取的特征映射到最终的输出空间，完成分类或回归任务。</p>
-                    <div class="demo-box">
-                        <canvas id="fc-network-canvas" width="350" height="280"></canvas>
-                        <div id="fc-explanation" class="demo-explanation">
-                            点击"开始演示"查看信号如何从前层传播到后层
-                        </div>
-                        <div class="demo-controls">
-                            <button onclick="startFCDemo()" class="btn-small">开始演示</button>
-                            <button onclick="resetFCDemo()" class="btn-small">重置</button>
-                        </div>
+                    <h3>词向量空间可视化</h3>
+                    <p class="section-description">词向量将词语映射到高维空间，语义相近的词在空间中距离更近。通过这种方式，AI模型可以理解词语之间的语义关系。</p>
+                    <div class="visualization-area">
+                        <canvas id="word-vector-canvas-main" width="800" height="400"></canvas>
+                    </div>
+                    <div class="info-box">
+                        <strong>工作原理：</strong>词向量通过训练学习将词语表示为数值向量。语义相似的词（如"猫"和"狗"）在向量空间中距离较近，而语义不同的词（如"猫"和"汽车"）距离较远。这种表示方法使得AI能够理解词语的语义关系。
                     </div>
                 </div>
+                
+                <!-- 词向量应用示例 -->
                 <div class="insight-section">
-                    <h3>词向量空间</h3>
-                    <p>词向量将词语映射到高维空间，语义相近的词在空间中距离更近。</p>
+                    <h3>词向量应用示例</h3>
+                    <p class="section-description">词向量在自然语言处理中有广泛应用，包括文本分类、机器翻译、情感分析等任务。</p>
                     <div class="demo-box">
                         <canvas id="word-vector-canvas" width="350" height="280"></canvas>
                         <div id="word-vector-explanation" class="demo-explanation">
-                            点击"开始演示"查看语义相近的词如何聚类
+                            <strong>说明：</strong>图中展示了语义相近的词如何聚类。例如，表示动物的词会聚集在一起，表示颜色的词会形成另一个聚类。这种聚类特性使得AI能够理解词语的语义关系。
                         </div>
                         <div class="demo-controls">
                             <button onclick="startWordVectorDemo()" class="btn-small">开始演示</button>
                             <button onclick="resetWordVectorDemo()" class="btn-small">重置</button>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-                
-        <!-- 词向量空间 -->
-        <div id="word-vector-content" class="insight-topic-content" style="display: none;">
-            <div class="insight-container">
-                <h2 style="color: var(--primary-color); margin-bottom: 1.5rem; font-size: 1.8rem; text-align: center; font-weight: 600;">词向量空间</h2>
-                <div class="visualization-area">
-                    <canvas id="word-vector-canvas-main" width="800" height="400"></canvas>
-                </div>
-                <div class="info-box" style="margin-top: 1.5rem; padding: 1rem 1.25rem; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border-left: 4px solid var(--primary-color); border-radius: 4px; font-size: 0.9rem; line-height: 1.6;">
-                    <strong style="color: var(--primary-color);">说明：</strong>词向量将词语映射到高维空间，语义相近的词在空间中距离更近。通过这种方式，AI模型可以理解词语之间的语义关系。
                 </div>
             </div>
         </div>
@@ -456,7 +488,7 @@
 
 .message.user {
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     margin-left: auto;
 }
 
@@ -748,7 +780,7 @@
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -777,35 +809,55 @@ async function loadModels() {
     try {
         const result = await apiRequest('/api/models', 'GET');
         if (result.success && result.models) {
-            const select = document.getElementById('model-select');
-            const modelInfo = document.getElementById('model-info');
-            select.innerHTML = '';
-            
-            result.models.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model.value;
-                option.textContent = `${model.provider} - ${model.name}`;
-                select.appendChild(option);
-            });
-            
-            // 显示第一个模型的描述
-            if (result.models.length > 0) {
-                updateModelInfo(result.models[0]);
+            // 更新工具模型选择器（tool-model-select）
+            const toolSelect = document.getElementById('tool-model-select');
+            if (toolSelect) {
+                toolSelect.innerHTML = '';
+                result.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.value;
+                    option.textContent = `${model.provider} - ${model.name}`;
+                    toolSelect.appendChild(option);
+                });
             }
             
-            // 监听模型选择变化
-            select.addEventListener('change', function() {
-                const selectedModel = result.models.find(m => m.value === this.value);
-                if (selectedModel) {
-                    updateModelInfo(selectedModel);
+            // 更新模型透视的模型选择器（model-select，如果存在）
+            const modelSelect = document.getElementById('model-select');
+            const modelInfo = document.getElementById('model-info');
+            if (modelSelect) {
+                modelSelect.innerHTML = '';
+                result.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.value;
+                    option.textContent = `${model.provider} - ${model.name}`;
+                    modelSelect.appendChild(option);
+                });
+                
+                // 显示第一个模型的描述
+                if (result.models.length > 0 && modelInfo) {
+                    updateModelInfo(result.models[0]);
                 }
-            });
+                
+                // 监听模型选择变化
+                modelSelect.addEventListener('change', function() {
+                    const selectedModel = result.models.find(m => m.value === this.value);
+                    if (selectedModel && modelInfo) {
+                        updateModelInfo(selectedModel);
+                    }
+                });
+            }
         }
     } catch (error) {
         console.error('加载模型列表失败:', error);
         // 如果加载失败，使用默认选项
-        const select = document.getElementById('model-select');
-        select.innerHTML = '<option value="none">未配置模型</option>';
+        const toolSelect = document.getElementById('tool-model-select');
+        if (toolSelect) {
+            toolSelect.innerHTML = '<option value="none">未配置模型</option>';
+        }
+        const modelSelect = document.getElementById('model-select');
+        if (modelSelect) {
+            modelSelect.innerHTML = '<option value="none">未配置模型</option>';
+        }
     }
 }
 
@@ -879,12 +931,18 @@ function showPlaygroundTool(toolType, element) {
         element.classList.add('active');
     }
     
+    // 显示工具工作区，隐藏历史记录工作区
+    document.getElementById('playground-workspace').style.display = 'block';
+    const historyWorkspace = document.getElementById('history-workspace');
+    if (historyWorkspace) {
+        historyWorkspace.style.display = 'none';
+    }
+    
     const toolNames = {
         'image-gen': '图像生成',
         'writing': '写作',
         'translation': '翻译',
         'programming': '编程',
-        'research': '深入研究',
         'ppt': 'PPT制作'
     };
     
@@ -907,7 +965,6 @@ function generateToolInterface(toolType) {
         'writing': '写作',
         'translation': '翻译',
         'programming': '编程',
-        'research': '深入研究',
         'ppt': 'PPT制作'
     };
     
@@ -916,7 +973,6 @@ function generateToolInterface(toolType) {
         'writing': '描述你的写作需求，例如：写一篇关于人工智能发展的文章',
         'translation': '输入需要翻译的文本',
         'programming': '描述你的编程需求，例如：写一个Python函数来计算斐波那契数列',
-        'research': '提出你的研究问题，例如：深度学习的未来发展趋势是什么？',
         'ppt': '描述你的PPT主题和需求，例如：制作一个关于AI基础知识的PPT，包含5个章节'
     };
     
@@ -937,8 +993,10 @@ function generateToolInterface(toolType) {
         `;
     }
     
-    return `
-        <div class="tool-interface">
+    // 图像生成工具不显示模型选择器（固定使用火山引擎）
+    let modelSelector = '';
+    if (toolType !== 'image-gen') {
+        modelSelector = `
             <div class="tool-model-selector">
                 <label>选择模型：</label>
                 <select id="tool-model-select">
@@ -953,6 +1011,22 @@ function generateToolInterface(toolType) {
                     <option value="openai-gpt-4">GPT-4</option>
                 </select>
             </div>
+        `;
+    } else {
+        modelSelector = `
+            <div class="tool-model-selector">
+                <label>图像生成引擎：</label>
+                <select id="tool-model-select" disabled style="background: #f5f5f5;">
+                    <option value="volc-seedream" selected>火山引擎 Seedream（自动）</option>
+                </select>
+                <small style="color: #666; display: block; margin-top: 0.5rem;">图像生成使用火山引擎 Seedream API</small>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="tool-interface">
+            ${modelSelector}
             ${conversationArea}
             <div class="tool-input-area">
                 <textarea id="tool-input" placeholder="${placeholder}" rows="8" onkeydown="handleTextareaKeydown(event, '${toolType}')"></textarea>
@@ -1052,18 +1126,43 @@ function executeTool(toolType) {
             }
             
             if (toolType === 'image-gen') {
-                // 图像生成只显示提示词
-                outputArea.innerHTML = `
-                    <div style="margin-bottom: 1rem;">
-                        <strong>优化后的图像生成提示词：</strong>
-                    </div>
-                    <div style="background: white; padding: 1rem; border-radius: 4px; border: 1px solid #ddd;">
-                        <pre style="white-space: pre-wrap; word-wrap: break-word;">${data.output}</pre>
-                    </div>
-                    <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
-                        提示：您可以使用上述提示词在图像生成工具（如DALL-E、Midjourney等）中生成图像。
-                    </p>
-                `;
+                // 图像生成：如果有图片URL则显示图片，否则显示提示词
+                if (data.image_url && data.type === 'image') {
+                    outputArea.innerHTML = `
+                        <div style="margin-bottom: 1rem;">
+                            <strong>图像生成成功！</strong>
+                        </div>
+                        <div style="background: white; padding: 1rem; border-radius: 4px; border: 1px solid #ddd; text-align: center;">
+                            <img src="${data.image_url}" alt="生成的图像" style="max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 1rem;">
+                            <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">
+                                提示词：${data.prompt || ''}
+                            </p>
+                        </div>
+                    `;
+                } else if (data.type === 'prompt_only') {
+                    // 仅显示优化后的提示词（未配置API Key时）
+                    outputArea.innerHTML = `
+                        <div style="margin-bottom: 1rem;">
+                            <strong>优化后的图像生成提示词：</strong>
+                        </div>
+                        <div style="background: white; padding: 1rem; border-radius: 4px; border: 1px solid #ddd;">
+                            <pre style="white-space: pre-wrap; word-wrap: break-word;">${data.output}</pre>
+                        </div>
+                        <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                            ${data.message || '提示：您可以使用上述提示词在图像生成工具（如DALL-E、Midjourney等）中生成图像。'}
+                        </p>
+                    `;
+                } else {
+                    // 默认显示输出内容
+                    outputArea.innerHTML = `
+                        <div style="margin-bottom: 1rem;">
+                            <strong>图像生成结果：</strong>
+                        </div>
+                        <div style="background: white; padding: 1rem; border-radius: 4px; border: 1px solid #ddd;">
+                            <pre style="white-space: pre-wrap; word-wrap: break-word;">${data.output}</pre>
+                        </div>
+                    `;
+                }
             } else if (toolType === 'ppt') {
                 // PPT制作显示内容并提供下载
                 outputArea.innerHTML = `
@@ -2673,6 +2772,198 @@ class WordVectorVisualizer {
             this.ctx.shadowBlur = 0;
         });
     }
+}
+
+// 显示历史记录
+function showConversationHistory(element) {
+    // 更新侧边栏选中状态
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    if (element) {
+        element.classList.add('active');
+    }
+    
+    // 隐藏工具工作区，显示历史记录工作区
+    document.getElementById('playground-workspace').style.display = 'none';
+    const historyWorkspace = document.getElementById('history-workspace');
+    if (historyWorkspace) {
+        historyWorkspace.style.display = 'block';
+        loadConversationHistory();
+    }
+}
+
+// 加载对话历史记录列表
+function loadConversationHistory(page = 1) {
+    const historyContent = document.getElementById('history-content');
+    const filter = document.getElementById('history-filter')?.value || '';
+    
+    let url = `/api/playground/conversation/history?page=${page}&per_page=20`;
+    if (filter) {
+        url += `&tool_type=${filter}`;
+    }
+    
+    historyContent.innerHTML = '<p class="workspace-placeholder">正在加载历史记录...</p>';
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.history && data.history.length > 0) {
+                let html = '<div class="history-list">';
+                data.history.forEach(item => {
+                    const toolNames = {
+                        'image-gen': '图像生成',
+                        'writing': '写作',
+                        'translation': '翻译',
+                        'programming': '编程',
+                        'ppt': 'PPT制作'
+                    };
+                    html += `
+                        <div class="history-item" style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; background: #fff;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <h4 style="margin: 0 0 0.5rem 0; color: #333; font-size: 1.1rem;">${item.title || '未命名对话'}</h4>
+                                    <p style="margin: 0.25rem 0; color: #666; font-size: 0.9rem;">
+                                        <span style="background: #e3f2fd; padding: 0.2rem 0.5rem; border-radius: 4px; margin-right: 0.5rem;">${toolNames[item.tool_type] || item.tool_type}</span>
+                                        <span style="color: #999;">${item.model_used || '未知模型'}</span>
+                                    </p>
+                                    <p style="margin: 0.25rem 0; color: #999; font-size: 0.85rem;">
+                                        共 ${item.message_count} 条消息 · ${item.updated_at}
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button onclick="viewConversationDetail(${item.id})" style="padding: 0.4rem 1rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">查看</button>
+                                    <button onclick="deleteConversation(${item.id})" style="padding: 0.4rem 1rem; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">删除</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                // 添加分页
+                if (data.pages > 1) {
+                    html += '<div style="margin-top: 1rem; text-align: center;">';
+                    if (data.page > 1) {
+                        html += `<button onclick="loadConversationHistory(${data.page - 1})" style="padding: 0.5rem 1rem; margin: 0 0.5rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">上一页</button>`;
+                    }
+                    html += `<span style="margin: 0 1rem; color: #666;">第 ${data.page} / ${data.pages} 页（共 ${data.total} 条）</span>`;
+                    if (data.page < data.pages) {
+                        html += `<button onclick="loadConversationHistory(${data.page + 1})" style="padding: 0.5rem 1rem; margin: 0 0.5rem; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">下一页</button>`;
+                    }
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                historyContent.innerHTML = html;
+            } else {
+                historyContent.innerHTML = '<p class="workspace-placeholder">暂无历史记录</p>';
+            }
+        })
+        .catch(error => {
+            console.error('加载历史记录失败:', error);
+            historyContent.innerHTML = '<p class="workspace-placeholder" style="color: #f44336;">加载失败，请稍后重试</p>';
+        });
+}
+
+// 查看对话详情
+function viewConversationDetail(conversationId) {
+    fetch(`/api/playground/conversation/${conversationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const toolNames = {
+                    'image-gen': '图像生成',
+                    'writing': '写作',
+                    'translation': '翻译',
+                    'programming': '编程',
+                    'ppt': 'PPT制作'
+                };
+                
+                let html = `
+                    <div style="background: #fff; border-radius: 8px; padding: 1.5rem; max-height: 600px; overflow-y: auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e0e0e0; padding-bottom: 1rem;">
+                            <div>
+                                <h3 style="margin: 0 0 0.5rem 0; color: #333;">${data.title || '未命名对话'}</h3>
+                                <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                                    <span style="background: #e3f2fd; padding: 0.2rem 0.5rem; border-radius: 4px; margin-right: 0.5rem;">${toolNames[data.tool_type] || data.tool_type}</span>
+                                    <span style="color: #999;">${data.model_used || '未知模型'}</span>
+                                    <span style="color: #999; margin-left: 1rem;">${data.updated_at}</span>
+                                </p>
+                            </div>
+                            <button onclick="closeConversationDetail()" style="padding: 0.5rem 1rem; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">关闭</button>
+                        </div>
+                        <div class="conversation-detail">
+                `;
+                
+                data.conversation.forEach((msg, index) => {
+                    if (msg.role === 'user') {
+                        html += `
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196F3;">
+                                <strong style="color: #1976D2;">您：</strong>
+                                <div style="margin-top: 0.5rem; color: #333; white-space: pre-wrap;">${escapeHtml(msg.content)}</div>
+                            </div>
+                        `;
+                    } else if (msg.role === 'assistant') {
+                        html += `
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                                <strong style="color: #388E3C;">AI：</strong>
+                                <div style="margin-top: 0.5rem; color: #333; white-space: pre-wrap;">${escapeHtml(msg.content)}</div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+                
+                const historyContent = document.getElementById('history-content');
+                historyContent.innerHTML = html;
+            } else {
+                alert('加载对话详情失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('加载对话详情失败:', error);
+            alert('加载对话详情失败，请稍后重试');
+        });
+}
+
+// 关闭对话详情
+function closeConversationDetail() {
+    loadConversationHistory();
+}
+
+// 删除对话记录
+function deleteConversation(conversationId) {
+    if (!confirm('确定要删除这条对话记录吗？')) {
+        return;
+    }
+    
+    fetch(`/api/playground/conversation/${conversationId}`, {
+        method: 'DELETE'
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('删除成功');
+                loadConversationHistory();
+            } else {
+                alert('删除失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('删除对话记录失败:', error);
+            alert('删除失败，请稍后重试');
+        });
+}
+
+// HTML转义函数
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // 初始化范围输入显示和模型列表

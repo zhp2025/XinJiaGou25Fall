@@ -250,7 +250,13 @@ def _chat_gemini(message, model_name='pro'):
     try:
         # 处理模型名称：gemini-1.5-flash 或 gemini-pro
         # model_name 可能是 '1.5-flash' 或 'pro'
-        full_model_name = f'gemini-{model_name}'
+        if model_name == '1.5-flash':
+            full_model_name = 'gemini-1.5-flash'
+        elif model_name == 'pro':
+            full_model_name = 'gemini-pro'
+        else:
+            full_model_name = f'gemini-{model_name}'
+        
         model = genai.GenerativeModel(full_model_name)
         
         prompt = f"""你是一个专业的AI助手，擅长回答关于人工智能、机器学习、深度学习等相关问题。请用中文回答。
@@ -259,15 +265,43 @@ def _chat_gemini(message, model_name='pro'):
         
         response = model.generate_content(prompt)
         
-        return {
-            'success': True,
-            'message': response.text,
-            'model': full_model_name
-        }
+        # 处理响应，确保有text属性
+        if hasattr(response, 'text') and response.text:
+            return {
+                'success': True,
+                'message': response.text,
+                'model': full_model_name
+            }
+        else:
+            # 尝试获取候选响应
+            if hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
+                    text = ''.join([part.text for part in candidate.content.parts if hasattr(part, 'text')])
+                    if text:
+                        return {
+                            'success': True,
+                            'message': text,
+                            'model': full_model_name
+                        }
+            
+            return {
+                'success': False,
+                'message': 'Gemini API返回了空响应',
+                'model': full_model_name
+            }
     except Exception as e:
+        error_msg = str(e)
+        # 提供更详细的错误信息
+        if 'API key' in error_msg or 'authentication' in error_msg.lower():
+            return {
+                'success': False,
+                'message': 'Gemini API密钥无效或未配置，请检查.env文件中的GEMINI_API_KEY',
+                'model': f'gemini-{model_name}'
+            }
         return {
             'success': False,
-            'message': f'发生错误: {str(e)}',
+            'message': f'Gemini API错误: {error_msg}',
             'model': f'gemini-{model_name}'
         }
 
@@ -291,8 +325,14 @@ def _chat_openai(message, model_name='gpt-3.5-turbo'):
     try:
         client = OpenAI(api_key=Config.OPENAI_API_KEY)
         
+        # 确保模型名称正确（OpenAI的模型名称不需要前缀）
+        if model_name.startswith('gpt-'):
+            actual_model_name = model_name
+        else:
+            actual_model_name = model_name
+        
         response = client.chat.completions.create(
-            model=model_name,
+            model=actual_model_name,
             messages=[
                 {'role': 'system', 'content': '你是一个专业的AI助手，擅长回答关于人工智能、机器学习、深度学习等相关问题。请用中文回答。'},
                 {'role': 'user', 'content': message}
@@ -300,47 +340,85 @@ def _chat_openai(message, model_name='gpt-3.5-turbo'):
             temperature=0.7
         )
         
-        return {
-            'success': True,
-            'message': response.choices[0].message.content,
-            'model': f'openai-{model_name}'
-        }
+        if response.choices and len(response.choices) > 0:
+            return {
+                'success': True,
+                'message': response.choices[0].message.content,
+                'model': f'openai-{actual_model_name}'
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'OpenAI API返回了空响应',
+                'model': f'openai-{actual_model_name}'
+            }
     except Exception as e:
+        error_msg = str(e)
+        # 提供更详细的错误信息
+        if 'API key' in error_msg or 'authentication' in error_msg.lower() or 'Invalid' in error_msg:
+            return {
+                'success': False,
+                'message': 'OpenAI API密钥无效或未配置，请检查.env文件中的OPENAI_API_KEY',
+                'model': f'openai-{model_name}'
+            }
+        elif 'rate limit' in error_msg.lower():
+            return {
+                'success': False,
+                'message': 'OpenAI API请求频率过高，请稍后重试',
+                'model': f'openai-{model_name}'
+            }
         return {
             'success': False,
-            'message': f'发生错误: {str(e)}',
+            'message': f'OpenAI API错误: {error_msg}',
             'model': f'openai-{model_name}'
         }
 
 
 def ai_search(query, context_data=None):
     """
-    使用AI进行智能搜索（默认使用阿里云）
+    智能搜索功能
+    分析搜索意图，理解用户需求，返回最相关的搜索结果关键词
     """
     if not DASHSCOPE_AVAILABLE or not Config.DASHSCOPE_API_KEY:
         return []
     
     try:
-        search_prompt = f"""你是一个智能搜索助手。用户想要搜索："{query}"
+        # 构建系统提示词，让AI理解搜索意图
+        system_prompt = """你是一个专业的AI搜索助手。你的任务是分析用户的搜索意图，理解用户想要查找的内容，并返回最相关的搜索关键词。
 
-请分析用户的搜索意图，并返回最相关的搜索关键词（3-5个），用逗号分隔。
+用户可能搜索的内容类型包括：
+- AI相关的文章、科普内容
+- AI工具和模型
+- AI术语和概念
+- 技术教程和资源
+
+请根据用户的搜索内容，分析其真实意图，返回3-5个最相关的搜索关键词（用逗号分隔）。
 只返回关键词，不要其他解释。"""
         
+        search_prompt = f"用户搜索：{query}\n\n请分析用户的搜索意图，返回最相关的搜索关键词："
+        
         messages = [
+            {'role': 'system', 'content': system_prompt},
             {'role': 'user', 'content': search_prompt}
         ]
         
+        # 进行搜索意图分析
         response = Generation.call(
-            model='qwen-turbo',
+            model='qwen-max',
             messages=messages,
-            result_format='message'
+            result_format='message',
+            temperature=0.7
         )
         
         if response.status_code == 200:
             keywords = response.output.choices[0].message.content.strip()
-            keyword_list = [k.strip() for k in keywords.split(',') if k.strip()]
-            return keyword_list
+            # 清理关键词，移除可能的标点符号和多余内容
+            keyword_list = [k.strip().strip('.,;!?。，；！？') for k in keywords.split(',') if k.strip()]
+            # 过滤空字符串和过短的关键词
+            keyword_list = [k for k in keyword_list if len(k) > 1]
+            return keyword_list[:5]  # 最多返回5个关键词
         else:
+            print(f'AI搜索API错误: {response.status_code}')
             return []
     except Exception as e:
         print(f'AI搜索错误: {str(e)}')
@@ -416,3 +494,339 @@ def get_available_models():
         })
     
     return models
+
+
+def chat_with_model_multi_turn(messages, model='aliyun-qwen-turbo'):
+    """
+    支持多轮对话的模型调用（原生支持多轮对话的模型）
+    
+    Args:
+        messages: 消息列表，格式：[{'role': 'system', 'content': '...'}, {'role': 'user', 'content': '...'}, ...]
+        model: 模型标识
+    
+    Returns:
+        dict: {'success': bool, 'message': str, 'model': str}
+    """
+    if not messages or len(messages) == 0:
+        return {
+            'success': False,
+            'message': '消息列表不能为空',
+            'model': model
+        }
+    
+    # 解析模型标识
+    if model.startswith('gemini-1.5-flash'):
+        provider = 'gemini'
+        model_name = '1.5-flash'
+    elif model.startswith('gemini-'):
+        parts = model.split('-', 1)
+        provider = parts[0]
+        model_name = parts[1]
+    else:
+        parts = model.split('-', 1)
+        if len(parts) != 2:
+            return {
+                'success': False,
+                'message': f'无效的模型标识: {model}',
+                'model': model
+            }
+        provider = parts[0]
+        model_name = parts[1]
+    
+    # 根据提供商调用相应的多轮对话API
+    if provider == 'aliyun':
+        return _chat_aliyun_multi_turn(messages, model_name)
+    elif provider == 'deepseek':
+        return _chat_deepseek_multi_turn(messages, model_name)
+    elif provider == 'kimi':
+        return _chat_kimi_multi_turn(messages, model_name)
+    elif provider == 'gemini':
+        return _chat_gemini_multi_turn(messages, model_name)
+    elif provider == 'openai':
+        return _chat_openai_multi_turn(messages, model_name)
+    else:
+        # 不支持多轮对话的模型，回退到单轮模式
+        last_user_message = next((msg['content'] for msg in reversed(messages) if msg['role'] == 'user'), '')
+        if not last_user_message:
+            return {
+                'success': False,
+                'message': '未找到用户消息',
+                'model': model
+            }
+        return chat_with_model(last_user_message, model)
+
+
+def _chat_aliyun_multi_turn(messages, model_name='qwen-turbo'):
+    """阿里云通义千问多轮对话"""
+    if not DASHSCOPE_AVAILABLE:
+        return {
+            'success': False,
+            'message': 'dashscope 模块未安装',
+            'model': f'aliyun-{model_name}'
+        }
+    
+    if not Config.DASHSCOPE_API_KEY:
+        return {
+            'success': False,
+            'message': 'API密钥未配置',
+            'model': f'aliyun-{model_name}'
+        }
+    
+    try:
+        response = Generation.call(
+            model=model_name,
+            messages=messages,
+            result_format='message'
+        )
+        
+        if response.status_code == 200:
+            return {
+                'success': True,
+                'message': response.output.choices[0].message.content,
+                'model': f'aliyun-{model_name}'
+            }
+        else:
+            return {
+                'success': False,
+                'message': f'API调用失败: {response.message}',
+                'model': f'aliyun-{model_name}'
+            }
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'发生错误: {str(e)}',
+            'model': f'aliyun-{model_name}'
+        }
+
+
+def _chat_deepseek_multi_turn(messages, model_name='chat'):
+    """DeepSeek多轮对话"""
+    if not Config.DEEPSEEK_API_KEY:
+        return {
+            'success': False,
+            'message': 'API密钥未配置',
+            'model': f'deepseek-{model_name}'
+        }
+    
+    try:
+        url = 'https://api.deepseek.com/v1/chat/completions'
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {Config.DEEPSEEK_API_KEY}'
+        }
+        
+        data = {
+            'model': 'deepseek-chat',
+            'messages': messages,
+            'temperature': 0.7
+        }
+        
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        response.raise_for_status()
+        result = response.json()
+        
+        return {
+            'success': True,
+            'message': result['choices'][0]['message']['content'],
+            'model': f'deepseek-{model_name}'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'发生错误: {str(e)}',
+            'model': f'deepseek-{model_name}'
+        }
+
+
+def _chat_kimi_multi_turn(messages, model_name='moonshot-v1-8k'):
+    """Kimi多轮对话"""
+    if not Config.KIMI_API_KEY:
+        return {
+            'success': False,
+            'message': 'API密钥未配置',
+            'model': f'kimi-{model_name}'
+        }
+    
+    try:
+        url = 'https://api.moonshot.cn/v1/chat/completions'
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {Config.KIMI_API_KEY}'
+        }
+        
+        data = {
+            'model': model_name,
+            'messages': messages,
+            'temperature': 0.7
+        }
+        
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        response.raise_for_status()
+        result = response.json()
+        
+        return {
+            'success': True,
+            'message': result['choices'][0]['message']['content'],
+            'model': f'kimi-{model_name}'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'发生错误: {str(e)}',
+            'model': f'kimi-{model_name}'
+        }
+
+
+def _chat_gemini_multi_turn(messages, model_name='pro'):
+    """Gemini多轮对话"""
+    if not GEMINI_AVAILABLE:
+        return {
+            'success': False,
+            'message': 'google-generativeai 模块未安装',
+            'model': f'gemini-{model_name}'
+        }
+    
+    if not Config.GEMINI_API_KEY:
+        return {
+            'success': False,
+            'message': 'API密钥未配置',
+            'model': f'gemini-{model_name}'
+        }
+    
+    try:
+        # 处理模型名称
+        if model_name == '1.5-flash':
+            full_model_name = 'gemini-1.5-flash'
+        elif model_name == 'pro':
+            full_model_name = 'gemini-pro'
+        else:
+            full_model_name = f'gemini-{model_name}'
+        
+        model = genai.GenerativeModel(full_model_name)
+        
+        # 提取system消息和最后一条用户消息
+        system_content = None
+        last_user_message = None
+        
+        for msg in messages:
+            if msg['role'] == 'system':
+                system_content = msg['content']
+            elif msg['role'] == 'user':
+                last_user_message = msg['content']
+        
+        # 构建提示词（包含system内容和用户消息）
+        if system_content and last_user_message:
+            prompt = f"{system_content}\n\n用户问题：{last_user_message}"
+        elif last_user_message:
+            prompt = last_user_message
+        else:
+            return {
+                'success': False,
+                'message': '未找到用户消息',
+                'model': full_model_name
+            }
+        
+        response = model.generate_content(prompt)
+        
+        # 处理响应
+        if hasattr(response, 'text') and response.text:
+            return {
+                'success': True,
+                'message': response.text,
+                'model': full_model_name
+            }
+        else:
+            # 尝试从candidates获取
+            if hasattr(response, 'candidates') and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
+                    text = ''.join([part.text for part in candidate.content.parts if hasattr(part, 'text')])
+                    if text:
+                        return {
+                            'success': True,
+                            'message': text,
+                            'model': full_model_name
+                        }
+        
+        return {
+            'success': False,
+            'message': 'Gemini API返回了空响应',
+            'model': full_model_name
+        }
+    except Exception as e:
+        error_msg = str(e)
+        if 'API key' in error_msg or 'authentication' in error_msg.lower():
+            return {
+                'success': False,
+                'message': 'Gemini API密钥无效或未配置',
+                'model': f'gemini-{model_name}'
+            }
+        return {
+            'success': False,
+            'message': f'Gemini API错误: {error_msg}',
+            'model': f'gemini-{model_name}'
+        }
+
+
+def _chat_openai_multi_turn(messages, model_name='gpt-3.5-turbo'):
+    """OpenAI多轮对话"""
+    if not OPENAI_AVAILABLE:
+        return {
+            'success': False,
+            'message': 'openai 模块未安装',
+            'model': f'openai-{model_name}'
+        }
+    
+    if not Config.OPENAI_API_KEY:
+        return {
+            'success': False,
+            'message': 'API密钥未配置',
+            'model': f'openai-{model_name}'
+        }
+    
+    try:
+        client = OpenAI(api_key=Config.OPENAI_API_KEY)
+        
+        # 确保模型名称正确
+        if model_name.startswith('gpt-'):
+            actual_model_name = model_name
+        else:
+            actual_model_name = model_name
+        
+        response = client.chat.completions.create(
+            model=actual_model_name,
+            messages=messages,
+            temperature=0.7
+        )
+        
+        if response.choices and len(response.choices) > 0:
+            return {
+                'success': True,
+                'message': response.choices[0].message.content,
+                'model': f'openai-{actual_model_name}'
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'OpenAI API返回了空响应',
+                'model': f'openai-{actual_model_name}'
+            }
+    except Exception as e:
+        error_msg = str(e)
+        if 'API key' in error_msg or 'authentication' in error_msg.lower() or 'Invalid' in error_msg:
+            return {
+                'success': False,
+                'message': 'OpenAI API密钥无效或未配置',
+                'model': f'openai-{model_name}'
+            }
+        elif 'rate limit' in error_msg.lower():
+            return {
+                'success': False,
+                'message': 'OpenAI API请求频率过高，请稍后重试',
+                'model': f'openai-{model_name}'
+            }
+        return {
+            'success': False,
+            'message': f'OpenAI API错误: {error_msg}',
+            'model': f'openai-{model_name}'
+        }

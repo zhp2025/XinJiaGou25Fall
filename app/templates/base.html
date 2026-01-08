@@ -5,6 +5,218 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AICove - AI学习与探索平台{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+    /* 全局悬浮AI助教样式 */
+    .floating-assistant {
+        position: fixed;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    .assistant-toggle {
+        cursor: move;
+        user-select: none;
+    }
+    
+    .floating-assistant.dragging .assistant-toggle {
+        cursor: grabbing;
+    }
+    
+    .assistant-toggle:active {
+        cursor: grabbing;
+    }
+
+    .assistant-toggle {
+        background: linear-gradient(135deg, #4A90E2, #9B59B6);
+        color: #000000;
+        padding: 1rem 1.5rem;
+        border-radius: 50px;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(74, 144, 226, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+
+    .assistant-toggle:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 25px rgba(74, 144, 226, 0.5);
+    }
+
+    .assistant-icon {
+        font-size: 1.5rem;
+    }
+
+    .assistant-label {
+        font-size: 1rem;
+    }
+
+    .assistant-panel {
+        position: absolute;
+        bottom: 70px;
+        right: 0;
+        width: 380px;
+        max-width: calc(100vw - 40px);
+        height: 600px;
+        max-height: calc(100vh - 200px);
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .assistant-panel.active {
+        display: flex;
+    }
+
+    .assistant-header {
+        background: linear-gradient(135deg, #4A90E2, #9B59B6);
+        color: #000000;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .assistant-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .assistant-close {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: #000000;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1.5rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.3s;
+    }
+
+    .assistant-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .assistant-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        background: #F8F9FA;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .assistant-message {
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        max-width: 85%;
+        word-wrap: break-word;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .assistant-message.user {
+        background: linear-gradient(135deg, #4A90E2, #9B59B6);
+        color: #000000;
+        align-self: flex-end;
+        margin-left: auto;
+    }
+
+    .assistant-message.assistant {
+        background: white;
+        border: 1px solid #E0E0E0;
+        align-self: flex-start;
+    }
+
+    .assistant-message.system {
+        background: #E8F4F8;
+        border-left: 3px solid #4A90E2;
+        max-width: 100%;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #666;
+    }
+
+    .assistant-message.source {
+        background: #E8F4F8;
+        border-left: 3px solid #4A90E2;
+        font-size: 0.8rem;
+        color: #666;
+        max-width: 100%;
+    }
+
+    .assistant-input-container {
+        padding: 1rem;
+        background: white;
+        border-top: 1px solid #E0E0E0;
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end;
+    }
+
+    .assistant-input-container textarea {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid #E0E0E0;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        resize: none;
+        font-family: inherit;
+        max-height: 100px;
+    }
+
+    .assistant-input-container textarea:focus {
+        outline: none;
+        border-color: #4A90E2;
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+
+    .assistant-input-container .btn {
+        padding: 0.75rem 1.25rem;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        .floating-assistant {
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .assistant-panel {
+            width: calc(100vw - 20px);
+            right: 0;
+            max-height: calc(100vh - 100px);
+        }
+        
+        .assistant-toggle .assistant-label {
+            display: none;
+        }
+        
+        .assistant-toggle {
+            padding: 1rem;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            justify-content: center;
+        }
+    }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -28,14 +240,28 @@
             </ul>
             <div class="nav-actions">
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('main.profile') }}" class="user-avatar-link" title="个人中心">
-                        <img src="/default.jpg" alt="头像" class="user-avatar-small" onerror="this.style.display='none'">
-                    </a>
+                    {% if current_user.role == 'super_admin' %}
+                        <a href="{{ url_for('main.super_admin') }}" class="nav-link">超级管理员</a>
+                    {% elif current_user.role == 'admin' %}
+                        <a href="{{ url_for('main.admin_dashboard') }}" class="nav-link">管理员</a>
+                    {% endif %}
+                    <div class="user-menu-container">
+                        <a href="#" class="user-avatar-link" title="个人中心" onclick="toggleUserMenu(event)">
+                            <img src="/default.jpg" alt="头像" class="user-avatar-small" onerror="this.style.display='none'">
+                        </a>
+                        <div class="user-menu-dropdown" id="userMenuDropdown">
+                            <a href="{{ url_for('main.profile') }}" class="user-menu-item">
+                                <span class="menu-icon">👤</span>
+                                <span>个人中心</span>
+                            </a>
+                            <a href="{{ url_for('auth.logout') }}" class="user-menu-item">
+                                <span class="menu-icon">🚪</span>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
                 {% else %}
                     <a href="{{ url_for('auth.login') }}" class="nav-link">登录</a>
-                    <a href="{{ url_for('main.profile') }}" class="user-avatar-link" title="个人中心">
-                        <img src="/default.jpg" alt="头像" class="user-avatar-small" onerror="this.style.display='none'">
-                    </a>
                 {% endif %}
             </div>
         </div>
@@ -59,6 +285,29 @@
         
         {% block content %}{% endblock %}
     </main>
+
+    <!-- 全局悬浮AI助教 -->
+    <div id="floating-assistant" class="floating-assistant">
+        <div class="assistant-toggle" onclick="toggleFloatingAssistant()">
+            <span class="assistant-icon">🤖</span>
+            <span class="assistant-label">AI助教</span>
+        </div>
+        <div class="assistant-panel" id="assistantPanel">
+            <div class="assistant-header">
+                <h3>AI助教</h3>
+                <button class="assistant-close" onclick="toggleFloatingAssistant()">×</button>
+            </div>
+            <div class="assistant-messages" id="floatingAssistantMessages">
+                <div class="assistant-message system">
+                    <p>👋 您好！我是 AICove 的 AI 助教。我可以基于站内知识库为您解答关于 AI 的各种问题。请随时提问！</p>
+                </div>
+            </div>
+            <div class="assistant-input-container">
+                <textarea id="floatingAssistantInput" placeholder="输入您的问题..." rows="2" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();askFloatingAssistant();}"></textarea>
+                <button onclick="askFloatingAssistant()" class="btn btn-primary btn-small">发送</button>
+            </div>
+        </div>
+    </div>
 
     <!-- 页脚 -->
     <footer class="footer">
@@ -95,7 +344,32 @@
     </footer>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% if current_user.is_authenticated %}
     <script>
+        window.currentUser = {
+            is_authenticated: true,
+            id: {{ current_user.id }}
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/user_guide.js') }}"></script>
+    {% else %}
+    <script>
+        window.currentUser = {
+            is_authenticated: false
+        };
+    </script>
+    {% endif %}
+    <script>
+    // 点击页面其他地方时关闭用户菜单
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.user-menu-container')) {
+            const dropdown = document.getElementById('userMenuDropdown');
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
+        }
+    });
+    
     // 导航栏高亮
     document.addEventListener('DOMContentLoaded', function() {
         const currentPath = window.location.pathname;
@@ -131,6 +405,244 @@
                 link.classList.add('active');
             }
         });
+    });
+    
+    // 悬浮AI助教功能 - 拖拽
+    let isDragging = false;
+    let currentX = 0;
+    let currentY = 0;
+    let initialX = 0;
+    let initialY = 0;
+    let xOffset = 0;
+    let yOffset = 0;
+    
+    const floatingAssistant = document.getElementById('floating-assistant');
+    const assistantToggle = floatingAssistant ? floatingAssistant.querySelector('.assistant-toggle') : null;
+    
+    if (assistantToggle && floatingAssistant) {
+        // 拖拽功能
+        assistantToggle.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+        
+        // 初始化位置
+        window.addEventListener('load', function() {
+            // 从localStorage恢复位置
+            const savedX = localStorage.getItem('assistantX');
+            const savedY = localStorage.getItem('assistantY');
+            if (savedX !== null && savedY !== null) {
+                xOffset = parseFloat(savedX);
+                yOffset = parseFloat(savedY);
+                setTranslate(xOffset, yOffset, floatingAssistant);
+            }
+        });
+    }
+    
+    function dragStart(e) {
+        // 如果点击的是按钮内的元素，不启动拖拽
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('.assistant-close')) {
+            return;
+        }
+        
+        initialX = e.clientX - xOffset;
+        initialY = e.clientY - yOffset;
+        
+        if (e.target === assistantToggle || assistantToggle.contains(e.target)) {
+            isDragging = true;
+            floatingAssistant.classList.add('dragging');
+        }
+    }
+    
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+            
+            xOffset = currentX;
+            yOffset = currentY;
+            
+            setTranslate(currentX, currentY, floatingAssistant);
+        }
+    }
+    
+    function dragEnd(e) {
+        if (isDragging) {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+            floatingAssistant.classList.remove('dragging');
+            
+            // 保存位置
+            localStorage.setItem('assistantX', xOffset);
+            localStorage.setItem('assistantY', yOffset);
+        }
+    }
+    
+    function setTranslate(xPos, yPos, el) {
+        el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+    }
+    
+    function toggleFloatingAssistant() {
+        const panel = document.getElementById('assistantPanel');
+        if (panel) {
+            panel.classList.toggle('active');
+        }
+    }
+    
+    async function askFloatingAssistant() {
+        const input = document.getElementById('floatingAssistantInput');
+        const question = input.value.trim();
+        if (!question) return;
+        
+        // 检查是否登录
+        if (!window.currentUser || !window.currentUser.is_authenticated) {
+            showMessage('请先登录后再使用AI助教', 'error');
+            return;
+        }
+        
+        // 添加用户消息
+        addFloatingAssistantMessage('user', question);
+        input.value = '';
+        
+        // 显示加载状态
+        const loadingId = addFloatingAssistantMessage('assistant', '正在检索知识库并生成回答...', true);
+        
+        try {
+            // 调用AI助教API
+            const result = await apiRequest('/api/ai-assistant', 'POST', {
+                question: question
+            });
+            
+            // 移除加载消息
+            const loadingMsg = document.getElementById(loadingId);
+            if (loadingMsg) {
+                loadingMsg.remove();
+            }
+            
+            if (result.success) {
+                const messageId = addFloatingAssistantMessage('assistant', result.answer);
+                if (result.sources && result.sources.length > 0) {
+                    result.sources.forEach(source => {
+                        addFloatingAssistantMessage('source', `来源：${source}`);
+                    });
+                }
+                // 添加反馈入口
+                addFeedbackButton(messageId, question);
+            } else {
+                addFloatingAssistantMessage('assistant', `抱歉，发生了错误：${result.message || '未知错误'}`);
+            }
+        } catch (error) {
+            const loadingMsg = document.getElementById(loadingId);
+            if (loadingMsg) {
+                loadingMsg.remove();
+            }
+            addFloatingAssistantMessage('assistant', '抱歉，网络错误，请稍后重试');
+        }
+    }
+    
+    function addFloatingAssistantMessage(role, content, isLoading = false) {
+        const messagesDiv = document.getElementById('floatingAssistantMessages');
+        if (!messagesDiv) return null;
+        
+        const messageDiv = document.createElement('div');
+        const messageId = 'floating-msg-' + Date.now();
+        messageDiv.id = messageId;
+        messageDiv.className = `assistant-message ${role}`;
+        messageDiv.innerHTML = `<p>${content}</p>`;
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        return messageId;
+    }
+    
+    function addFeedbackButton(messageId, question) {
+        const messageDiv = document.getElementById(messageId);
+        if (!messageDiv) return;
+        
+        const feedbackDiv = document.createElement('div');
+        feedbackDiv.className = 'assistant-feedback';
+        feedbackDiv.style.cssText = 'margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.1);';
+        const safeQuestion = (question || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        feedbackDiv.innerHTML = `
+            <button onclick="showFeedbackForm('${safeQuestion}')" class="btn-feedback" style="background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
+                💬 反馈此回答
+            </button>
+        `;
+        messageDiv.appendChild(feedbackDiv);
+    }
+    
+    function showFeedbackForm(question) {
+        const messagesDiv = document.getElementById('floatingAssistantMessages');
+        if (!messagesDiv) return;
+        
+        let existingForm = messagesDiv.querySelector('.feedback-form-container');
+        if (existingForm) {
+            existingForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        
+        const feedbackDiv = document.createElement('div');
+        feedbackDiv.className = 'assistant-message feedback-form-container';
+        feedbackDiv.style.cssText = 'background: #f8f9fa; border-left: 3px solid var(--primary-color);';
+        const safeQuestion = (question || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        feedbackDiv.innerHTML = `
+            <div style="padding: 1rem;">
+                <p style="margin-bottom: 0.5rem; font-weight: 600; color: var(--text-color);">💡 请告诉我们您的反馈：</p>
+                <textarea id="feedback-content" placeholder="请描述您对回答的反馈意见..." rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem; resize: vertical; margin-bottom: 0.5rem;">${question ? '问题：' + question.replace(/'/g, "\\'") + '\\n\\n' : ''}</textarea>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button onclick="closeFeedbackForm()" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-color); padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">取消</button>
+                    <button onclick="submitFeedback('${safeQuestion}')" style="background: var(--primary-color); border: none; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">提交反馈</button>
+                </div>
+            </div>
+        `;
+        messagesDiv.appendChild(feedbackDiv);
+        feedbackDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    function closeFeedbackForm() {
+        const form = document.querySelector('.feedback-form-container');
+        if (form) {
+            form.remove();
+        }
+    }
+    
+    async function submitFeedback(originalQuestion) {
+        const feedbackContent = document.getElementById('feedback-content');
+        if (!feedbackContent) return;
+        
+        const content = feedbackContent.value.trim();
+        if (!content) {
+            alert('请输入反馈内容');
+            return;
+        }
+        
+        try {
+            const result = await apiRequest('/api/feedback', 'POST', {
+                type: 'ai_assistant',
+                question: originalQuestion || '',
+                content: content
+            });
+            
+            if (result.success) {
+                closeFeedbackForm();
+                addFloatingAssistantMessage('system', '✅ 感谢您的反馈！我们会认真考虑您的意见。');
+            } else {
+                alert('提交失败：' + (result.message || '未知错误'));
+            }
+        } catch (error) {
+            alert('网络错误，请稍后重试');
+        }
+    }
+    
+    // 点击外部关闭助教面板
+    document.addEventListener('click', function(event) {
+        const floatingAssistant = document.getElementById('floating-assistant');
+        const panel = document.getElementById('assistantPanel');
+        if (panel && panel.classList.contains('active')) {
+            if (!floatingAssistant.contains(event.target)) {
+                panel.classList.remove('active');
+            }
+        }
     });
     </script>
     {% block extra_js %}{% endblock %}

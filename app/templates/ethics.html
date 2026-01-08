@@ -14,7 +14,7 @@
         <div class="sidebar-left">
             <h3 class="sidebar-title">专题列表</h3>
             <ul class="sidebar-list">
-                {% for topic in topics %}
+                {% for topic in topics.items %}
                 <li class="sidebar-item">
                     <span class="sidebar-arrow">▶</span>
                     <a href="{{ url_for('main.ethics_topic', slug=topic.slug) }}">{{ topic.title }}</a>
@@ -24,7 +24,7 @@
         </div>
         <div class="content-main">
             <div class="topics-list">
-                {% for topic in topics %}
+                {% for topic in topics.items %}
                 <div class="topic-card card-animate hover-lift scroll-reveal">
                     <h2><a href="{{ url_for('main.ethics_topic', slug=topic.slug) }}">{{ topic.title }}</a></h2>
                     <p class="topic-description">{{ topic.description[:200] }}...</p>
@@ -38,12 +38,29 @@
                 {% endfor %}
             </div>
             <!-- 分页 -->
+            {% if topics.pages > 1 %}
             <div class="pagination">
-                <span class="page-number active">1</span>
-                <span class="page-number">2</span>
-                <span class="page-number">3</span>
-                <span class="page-ellipsis">...</span>
+                {% if topics.has_prev %}
+                <a href="{{ url_for('main.ethics', page=topics.prev_num) }}" class="page-link">上一页</a>
+                {% endif %}
+                
+                {% for page_num in topics.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == topics.page %}
+                        <span class="page-link active">{{ page_num }}</span>
+                        {% else %}
+                        <a href="{{ url_for('main.ethics', page=page_num) }}" class="page-link">{{ page_num }}</a>
+                        {% endif %}
+                    {% else %}
+                        <span class="page-link">...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if topics.has_next %}
+                <a href="{{ url_for('main.ethics', page=topics.next_num) }}" class="page-link">下一页</a>
+                {% endif %}
             </div>
+            {% endif %}
         </div>
     </div>
 </div>

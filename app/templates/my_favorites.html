@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}我的收藏 - AICove{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="my-favorites-page">
+        <h1>我的收藏</h1>
+        
+        <div class="favorites-list">
+            {% if posts %}
+                {% for post in posts %}
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="post-author-info">
+                            <strong>{{ post.author.username }}</strong>
+                            <span class="post-date">{{ post['created_at'].strftime('%Y-%m-%d %H:%M') if post.get('created_at') else '' }}</span>
+                        </div>
+                        <span class="post-category">{{ post.category }}</span>
+                    </div>
+                    <h2><a href="{{ url_for('main.forum_post', post_id=post.id) }}">{{ post.title }}</a></h2>
+                    <p class="post-preview">{{ post.content[:200] }}...</p>
+                    <div class="post-footer">
+                        <div class="post-stats">
+                            <span>👁 {{ post.views }}</span>
+                            <span>❤️ {{ post.likes }}</span>
+                            <span>💬 {{ post.comments_count }}</span>
+                        </div>
+                        <button class="btn btn-small btn-secondary" onclick="unfavoritePost({{ post.id }})">取消收藏</button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-favorites">
+                    <p>您还没有收藏任何帖子</p>
+                    <a href="{{ url_for('main.forum') }}" class="btn btn-primary">去浏览帖子</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.my-favorites-page {
+    max-width: 1000px;
+    margin: 2rem auto;
+}
+
+.my-favorites-page h1 {
+    color: #4A90E2;
+    text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+    margin-bottom: 2rem;
+}
+
+.favorites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.post-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(74, 144, 226, 0.2);
+    transition: all 0.3s;
+}
+
+.post-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 20px rgba(74, 144, 226, 0.2);
+    border-color: rgba(74, 144, 226, 0.4);
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.post-author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.post-author-info strong {
+    color: #4A90E2;
+}
+
+.post-date {
+    font-size: 0.85rem;
+    color: #000000;
+}
+
+.post-category {
+    padding: 0.25rem 0.75rem;
+    background: rgba(74, 144, 226, 0.2);
+    border-radius: 12px;
+    color: #4A90E2;
+    font-size: 0.85rem;
+}
+
+.post-card h2 {
+    margin-bottom: 0.75rem;
+}
+
+.post-card h2 a {
+    color: #000000;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.post-card h2 a:hover {
+    color: #4A90E2;
+}
+
+.post-preview {
+    color: #000000;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.post-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.post-stats {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+    color: #000000;
+}
+
+.btn-small {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+.no-favorites {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.no-favorites p {
+    color: #000000;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function unfavoritePost(postId) {
+    const result = await apiRequest(`/api/forum/${postId}/favorite`, 'POST');
+    if (result.success && !result.is_favorited) {
+        showMessage('已取消收藏', 'info');
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+    }
+}
+</script>
+{% endblock %}
+

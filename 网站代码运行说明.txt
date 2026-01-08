@@ -1,0 +1,358 @@
+AICove 网站代码运行说明
+==========================================
+
+本文档详细说明如何运行和部署AICove网站。
+
+一、环境准备
+------------
+
+1. Python环境
+   - 版本要求：Python 3.8 或更高版本
+   - 检查方法：python --version
+
+2. MySQL数据库
+   - 版本要求：MySQL 5.7 或更高版本
+   - 确保MySQL服务正在运行
+
+3. 安装Python依赖
+   在项目根目录执行：
+   pip install -r requirements.txt
+   
+   主要依赖包：
+   - Flask: Web框架
+   - Flask-Login: 用户认证
+   - pymysql: MySQL数据库连接
+   - python-dotenv: 环境变量管理
+   - werkzeug: 密码加密
+   - dashscope: 阿里云通义千问API（可选）
+   - openai: OpenAI API（可选）
+   - 其他AI服务SDK（可选）
+
+二、配置环境变量
+----------------
+
+1. 创建.env文件
+   在项目根目录创建.env文件，可以参考.env.example文件：
+   
+   # 复制示例文件
+   cp .env.example .env
+   
+   # 或手动创建.env文件，内容如下：
+
+   # Flask配置
+   SECRET_KEY=your-secret-key-here-change-in-production
+   
+   # 数据库配置
+   DB_HOST=127.0.0.1
+   DB_USER=root
+   DB_PASSWORD=your-mysql-password
+   DB_NAME=IA
+   
+   # AI服务API密钥（可选）
+   DASHSCOPE_API_KEY=your-dashscope-api-key
+   DEEPSEEK_API_KEY=your-deepseek-api-key
+   KIMI_API_KEY=your-kimi-api-key
+   GEMINI_API_KEY=your-gemini-api-key
+   OPENAI_API_KEY=your-openai-api-key
+   VOLC_SEEDREAM_API_KEY=your-volc-seedream-api-key
+
+2. 重要说明
+   - SECRET_KEY: 用于Flask会话加密，生产环境必须修改为随机字符串
+   - DB_PASSWORD: MySQL数据库密码，请填写你的实际密码
+   - API密钥：只有需要使用对应AI服务时才需要配置，不配置也不影响基本功能
+   - .env文件包含敏感信息，不要提交到版本控制系统
+
+三、数据库初始化
+----------------
+
+方式一：使用整合脚本（推荐）
+---------------------------
+
+执行以下命令，一键完成所有初始化步骤：
+
+python db_utils.py init
+
+该脚本会自动执行：
+1. 创建数据库结构（包含表、索引、视图、触发器、存储过程、函数）
+2. 插入初始数据（包含默认用户）
+3. 启动Web服务器
+
+方式二：分步执行
+---------------
+
+如果需要分步执行，可以按以下顺序：
+
+1. 创建数据库结构（包含所有增强功能）
+   python db_utils.py create
+
+2. 插入初始数据（包含默认用户）
+   python db_utils.py insert
+
+3. 启动Web服务器
+   python run.py
+
+方式三：使用SQL脚本
+------------------
+
+1. 导入数据库结构（包含所有增强功能）
+   mysql -u root -p IA < init_schema.sql
+
+2. 导入初始数据（包含默认用户）
+   mysql -u root -p IA < insert_mock_data.sql
+
+3. 启动Web服务器
+   python run.py
+
+四、启动Web服务器
+----------------
+
+1. 基本启动
+   python run.py
+   
+   服务器将在 http://localhost:5000 启动
+
+2. 使用整合脚本启动
+   python db_utils.py init
+   
+   会自动完成初始化并启动服务器
+
+3. 服务器配置
+   - 默认地址：0.0.0.0（所有网络接口）
+   - 默认端口：5000
+   - 调试模式：开启（生产环境应关闭）
+
+五、访问网站
+------------
+
+1. 本地访问
+   http://localhost:5000
+
+2. 局域网访问
+   http://[你的IP地址]:5000
+
+3. 默认账号
+   - 超级管理员：superadmin / superadmin123
+   - 管理员：admin / admin123
+   - 普通用户：user / user123
+
+六、数据库说明
+--------------
+
+1. 数据库结构
+   - 数据库名称：IA（可在.env中配置）
+   - 字符集：utf8mb4
+   - 排序规则：utf8mb4_unicode_ci
+
+2. 自动时间戳
+   - created_at字段：使用DEFAULT CURRENT_TIMESTAMP，插入时自动记录
+   - updated_at字段：使用ON UPDATE CURRENT_TIMESTAMP，更新时自动记录
+   - 注意：在INSERT语句中无需手动指定created_at和updated_at值
+
+3. 数据库增强功能
+   - 索引：优化查询性能
+   - 视图：简化常用查询
+   - 触发器：自动维护数据一致性
+   - 存储过程：封装常用操作
+   - 函数：辅助计算
+
+七、开发模式
+------------
+
+1. 调试模式
+   - 默认开启（run.py中debug=True）
+   - 修改代码后自动重载
+   - 显示详细错误信息
+
+2. 生产环境
+   - 修改run.py，设置debug=False
+   - 使用生产级WSGI服务器（如Gunicorn）
+   - 配置反向代理（如Nginx）
+
+八、常见问题
+------------
+
+1. 数据库连接失败
+   - 检查MySQL服务是否运行
+   - 检查.env文件中的数据库配置
+   - 检查数据库用户权限
+
+2. 端口被占用
+   - 修改run.py中的port参数
+   - 或关闭占用5000端口的程序
+
+3. 模块导入错误
+   - 确保已安装所有依赖：pip install -r requirements.txt
+   - 检查Python版本是否符合要求
+
+4. 静态文件无法加载
+   - 检查app/static目录是否存在
+   - 检查文件路径是否正确
+
+5. 登录失败
+   - 检查数据库中的用户数据
+   - 检查密码哈希是否正确
+   - 运行python db_utils.py users重新创建用户
+
+九、数据管理
+------------
+
+1. 清空数据库
+   - 删除数据库：DROP DATABASE IA;
+   - 重新运行初始化脚本
+
+2. 备份数据库
+   mysqldump -u root -p IA > backup.sql
+
+3. 恢复数据库
+   mysql -u root -p IA < backup.sql
+
+4. 查看数据库状态
+   - 连接数据库：mysql -u root -p IA
+   - 查看表：SHOW TABLES;
+   - 查看数据：SELECT * FROM users;
+
+十、项目结构
+------------
+
+AICove/
+├── app/                    # 应用主目录
+│   ├── __init__.py        # Flask应用工厂
+│   ├── routes.py          # 路由定义
+│   ├── models.py          # 数据库模型
+│   ├── mock_data.py       # 数据访问层
+│   ├── ai_service.py      # AI服务模块
+│   ├── tagging_system.py  # 标记体系
+│   ├── category_utils.py  # 分类工具
+│   ├── templates/         # HTML模板
+│   └── static/            # 静态文件
+├── config.py              # 配置文件
+├── run.py                 # 应用入口
+├── db_utils.py            # 数据库工具脚本（包含创建、插入、初始化等功能）
+├── init_schema.sql        # 数据库初始化脚本（包含所有结构）
+├── insert_mock_data.sql   # 初始数据（包含默认用户）
+└── requirements.txt       # Python依赖
+
+十一、API接口说明
+-----------------
+
+主要API端点：
+
+认证相关：
+- POST /auth/login - 用户登录
+- POST /auth/register - 用户注册
+- GET /auth/forgot-password - 找回密码页面
+- POST /auth/forgot-password - 找回密码
+
+个人中心：
+- GET /profile - 个人中心页面
+- GET /api/profile/favorites - 获取收藏列表
+- GET /api/profile/likes - 获取点赞记录
+- GET /api/profile/messages - 获取消息列表
+- POST /api/profile/username - 更新昵称
+- POST /api/profile/password - 修改密码
+- POST /api/profile/avatar - 上传头像
+
+论坛相关：
+- GET /community/forum - 论坛列表
+- GET /community/forum/<post_id> - 帖子详情
+- POST /api/forum/<post_id>/like - 点赞/取消点赞
+- POST /api/forum/<post_id>/favorite - 收藏/取消收藏
+- POST /api/forum/<post_id>/comment - 添加评论
+- POST /api/forum/<post_id>/comment/<comment_id>/reply - 添加回复
+
+搜索相关：
+- GET /search - 搜索页面
+- 支持普通搜索、高级检索、AI搜索
+
+AI服务：
+- POST /api/ai-assistant - 智能助教
+- POST /api/ai-lab/image-gen - 图像生成
+- POST /api/ai-lab/writing - 写作助手
+- POST /api/ai-lab/translation - 翻译工具
+- POST /api/ai-lab/programming - 编程助手
+- POST /api/ai-lab/research - 深入研究
+- POST /api/ai-lab/ppt - PPT制作
+
+十二、注意事项
+--------------
+
+1. 数据存储
+   - 所有数据存储在MySQL数据库中
+   - 用户上传的文件存储在app/static/uploads/目录
+   - 系统资源图片存储在images/目录
+
+2. 安全性
+   - 生产环境必须修改SECRET_KEY
+   - 不要将.env文件提交到版本控制系统
+   - 定期备份数据库
+   - 使用HTTPS（生产环境）
+
+3. 性能优化
+   - 数据库已创建索引优化查询
+   - 使用视图简化常用查询
+   - 触发器自动维护数据一致性
+
+4. 扩展性
+   - 可以添加新的AI服务API
+   - 可以扩展数据库表结构
+   - 可以添加新的功能模块
+
+## 七、使用Ngrok进行公网部署（自动启用）
+
+应用默认会自动启用Ngrok免费隧道，让其他用户可以远程访问您的网站：
+
+```bash
+# 直接运行即可（自动创建ngrok隧道）
+python run.py
+```
+
+**说明：**
+- 系统会自动使用Ngrok免费模式，无需任何配置
+- 免费版地址每次重启都会变化，启动时会显示在控制台
+- 如果未安装pyngrok，会提示安装，但不影响本地运行
+- 公网地址会在启动时自动显示，可直接分享给其他用户
+
+**安装pyngrok（如果未安装）：**
+```bash
+pip install pyngrok
+```
+
+**注意事项：**
+- 免费版ngrok有连接数限制，但足够个人使用
+- 地址每次重启都会变化，需要重新分享
+- 按 Ctrl+C 停止服务器时会自动关闭ngrok隧道
+
+### 使用固定地址模式（可选）
+
+如果您在 `.env` 文件中设置了 `NGROK_AUTH_TOKEN`，可以使用固定地址模式：
+
+```bash
+# 如果.env中设置了NGROK_AUTH_TOKEN，会自动使用token模式
+# 如果未设置，则使用免费模式
+python run.py
+```
+
+**获取Ngrok认证Token：**
+
+1. 访问 https://dashboard.ngrok.com/signup 注册账号（免费）
+2. 登录后访问 https://dashboard.ngrok.com/get-started/your-authtoken
+3. 复制您的authtoken
+4. 在 `.env` 文件中添加：
+   ```
+   NGROK_AUTH_TOKEN=你的token
+   ```
+
+**两种模式对比：**
+
+- **免费模式** (`python run.py`): 无需配置，地址每次重启变化
+- **Token模式**: 在 `.env` 文件中设置 `NGROK_AUTH_TOKEN`，运行 `python run.py` 即可使用固定地址
+
+**注意：**
+- 免费版ngrok地址每次重启都会变化
+- 如需固定地址，请使用ngrok付费版或设置authtoken
+- 公网地址会在启动时显示在控制台
+
+==========================================
+运行说明完成
+更新日期：2025-12-30
+

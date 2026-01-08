@@ -45,12 +45,57 @@
 
         <div class="comments-list">
             {% for comment in comments %}
-            <div class="comment-item">
+            <div class="comment-item" id="comment-{{ comment.id }}">
                 <div class="comment-header">
-                    <strong>{{ comment.author.username }}</strong>
-                    <span class="comment-date">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    <div class="comment-author-info">
+                        <strong>{{ comment.author.username }}</strong>
+                        <span class="comment-date">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <div class="comment-actions">
+                        <button class="comment-like-btn" onclick="likeComment({{ comment.id }}, {{ post.id }})" id="like-comment-{{ comment.id }}">
+                            <span class="like-icon">🤍</span>
+                            <span id="comment-likes-{{ comment.id }}">{{ comment.likes }}</span>
+                        </button>
+                        {% if current_user.is_authenticated %}
+                        <button class="comment-reply-btn" onclick="showReplyForm({{ comment.id }})">回复</button>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="comment-content">{{ comment.content }}</div>
+                
+                <!-- 回复区域 -->
+                {% if comment.replies %}
+                <div class="replies-list">
+                    {% for reply in comment.replies %}
+                    <div class="reply-item">
+                        <div class="reply-header">
+                            <strong>{{ reply.author.username }}</strong>
+                            <span class="reply-date">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                        <div class="reply-content">{{ reply.content }}</div>
+                        <div class="reply-actions">
+                            <button class="reply-like-btn" onclick="likeReply({{ reply.id }}, {{ comment.id }}, {{ post.id }})" id="like-reply-{{ reply.id }}">
+                                <span class="like-icon">🤍</span>
+                                <span id="reply-likes-{{ reply.id }}">{{ reply.likes }}</span>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- 回复表单（隐藏） -->
+                {% if current_user.is_authenticated %}
+                <div class="reply-form-container" id="reply-form-{{ comment.id }}" style="display: none;">
+                    <form onsubmit="addReply(event, {{ comment.id }}, {{ post.id }})">
+                        <textarea placeholder="写下您的回复..." rows="3" required id="reply-content-{{ comment.id }}"></textarea>
+                        <div class="reply-form-actions">
+                            <button type="submit" class="btn btn-primary btn-small">发表回复</button>
+                            <button type="button" class="btn btn-secondary btn-small" onclick="hideReplyForm({{ comment.id }})">取消</button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -64,7 +109,8 @@
     background: white;
     padding: 2.5rem;
     border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
     margin-bottom: 2rem;
     animation: fadeIn 0.6s ease-out;
 }
@@ -98,12 +144,14 @@
     background: white;
     padding: 2.5rem;
     border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
     animation: fadeIn 0.6s ease-out;
 }
 
 .comments-section h2 {
     margin-bottom: 1.5rem;
+    color: var(--primary-color);
 }
 
 #comment-form {
@@ -114,29 +162,42 @@
     width: 100%;
     padding: 1rem;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 8px;
+    background: white;
+    color: var(--text-color);
     font-size: 1rem;
     margin-bottom: 1rem;
     resize: vertical;
 }
 
+#comment-form textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
 .comments-list {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
+    max-height: none;
+    overflow: visible;
 }
 
 .comment-item {
     padding: 1.25rem;
-    background: linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%);
+    background: white;
     border-radius: 12px;
     border-left: 3px solid var(--primary-color);
     transition: all 0.3s ease;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border-color);
 }
 
 .comment-item:hover {
     transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow);
+    border-left-color: var(--purple-color);
 }
 
 .comment-header {
@@ -144,6 +205,12 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.75rem;
+}
+
+.comment-author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 .comment-header strong {
@@ -156,9 +223,148 @@
     font-size: 0.85rem;
 }
 
+.comment-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.comment-like-btn,
+.comment-reply-btn {
+    background: white;
+    border: 1px solid var(--border-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: var(--text-color);
+    font-size: 0.85rem;
+}
+
+.comment-like-btn:hover,
+.comment-reply-btn:hover {
+    background: var(--light-color);
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.comment-like-btn.liked {
+    border-color: #FF5722;
+    background: rgba(255, 87, 34, 0.2);
+}
+
 .comment-content {
     line-height: 1.7;
     color: var(--text-color);
+    margin-bottom: 0.75rem;
+}
+
+.replies-list {
+    margin-top: 1rem;
+    margin-left: 2rem;
+    padding-left: 1rem;
+    border-left: 2px solid rgba(74, 144, 226, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.reply-item {
+    padding: 0.75rem;
+    background: var(--light-color);
+    border-radius: 8px;
+    border-left: 2px solid var(--primary-color);
+}
+
+.reply-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.reply-header strong {
+    color: #9B59B6;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.reply-date {
+    color: #000000;
+    font-size: 0.75rem;
+}
+
+.reply-content {
+    line-height: 1.6;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.reply-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.reply-like-btn {
+    background: white;
+    border: 1px solid var(--border-color);
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: var(--text-color);
+    font-size: 0.75rem;
+}
+
+.reply-like-btn:hover {
+    background: var(--light-color);
+    border-color: var(--primary-color);
+}
+
+.reply-form-container {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--light-color);
+    border-radius: 8px;
+}
+
+.reply-form-container textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: white;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    resize: vertical;
+}
+
+.reply-form-container textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.reply-form-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-small {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+.btn-secondary {
+    background: white;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.btn-secondary:hover {
+    background: var(--light-color);
 }
 
 .like-btn {
@@ -259,6 +465,106 @@ async function addComment(event, postId) {
         showMessage(result.message || '评论失败', 'error');
     }
 }
+
+async function likeComment(commentId, postId) {
+    const result = await apiRequest(`/api/forum/${postId}/comment/${commentId}/like`, 'POST');
+    if (result.success) {
+        document.getElementById(`comment-likes-${commentId}`).textContent = result.likes;
+        const btn = document.getElementById(`like-comment-${commentId}`);
+        const icon = btn.querySelector('.like-icon');
+        if (result.is_liked) {
+            icon.textContent = '❤️';
+            btn.classList.add('liked');
+        } else {
+            icon.textContent = '🤍';
+            btn.classList.remove('liked');
+        }
+    }
+}
+
+async function likeReply(replyId, commentId, postId) {
+    const result = await apiRequest(`/api/forum/${postId}/reply/${replyId}/like`, 'POST');
+    if (result.success) {
+        document.getElementById(`reply-likes-${replyId}`).textContent = result.likes;
+        const btn = document.getElementById(`like-reply-${replyId}`);
+        const icon = btn.querySelector('.like-icon');
+        if (result.is_liked) {
+            icon.textContent = '❤️';
+            btn.classList.add('liked');
+        } else {
+            icon.textContent = '🤍';
+            btn.classList.remove('liked');
+        }
+    }
+}
+
+function showReplyForm(commentId) {
+    const form = document.getElementById(`reply-form-${commentId}`);
+    if (form) {
+        form.style.display = 'block';
+        form.querySelector('textarea').focus();
+    }
+}
+
+function hideReplyForm(commentId) {
+    const form = document.getElementById(`reply-form-${commentId}`);
+    if (form) {
+        form.style.display = 'none';
+        form.querySelector('textarea').value = '';
+    }
+}
+
+async function addReply(event, commentId, postId) {
+    event.preventDefault();
+    const content = document.getElementById(`reply-content-${commentId}`).value;
+    
+    const result = await apiRequest(`/api/forum/${postId}/comment/${commentId}/reply`, 'POST', { content });
+    if (result.success) {
+        showMessage('回复发表成功', 'success');
+        location.reload();
+    } else {
+        showMessage(result.message || '回复失败', 'error');
+    }
+}
+
+// 页面加载时初始化点赞和收藏状态
+document.addEventListener('DOMContentLoaded', async function() {
+    if (window.currentUser && window.currentUser.is_authenticated) {
+        const postIdMatch = window.location.pathname.match(/\/forum\/(\d+)/);
+        if (postIdMatch) {
+            const postId = parseInt(postIdMatch[1]);
+            try {
+                const status = await apiRequest(`/api/forum/${postId}/status`, 'GET');
+                if (status.success) {
+                    // 更新帖子点赞状态
+                    const likeBtn = document.getElementById(`like-btn-${postId}`);
+                    if (likeBtn) {
+                        const likeIcon = likeBtn.querySelector('.like-icon');
+                        if (status.is_liked) {
+                            likeIcon.textContent = '❤️';
+                            likeBtn.classList.add('liked');
+                        } else {
+                            likeIcon.textContent = '🤍';
+                            likeBtn.classList.remove('liked');
+                        }
+                    }
+                    
+                    // 更新帖子收藏状态
+                    const favoriteBtn = document.getElementById(`favorite-btn-${postId}`);
+                    if (favoriteBtn) {
+                        if (status.is_favorited) {
+                            favoriteBtn.classList.add('favorited');
+                        } else {
+                            favoriteBtn.classList.remove('favorited');
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('获取帖子状态失败:', e);
+            }
+        }
+    }
+});
 </script>
 {% endblock %}
 

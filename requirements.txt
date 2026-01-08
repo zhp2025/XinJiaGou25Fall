@@ -4,6 +4,7 @@ Flask-Login==0.6.3
 Werkzeug==3.0.1
 python-dotenv==1.0.0
 requests==2.31.0
+pyngrok==7.0.0
 
 # ========== AI 模型依赖（可选，根据使用的模型安装） ==========
 # 阿里云通义千问（DashScope）

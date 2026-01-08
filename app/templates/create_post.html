@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}发表帖子 - AICove{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="create-post-page">
+        <h1>发表新帖子</h1>
+        <form id="create-post-form" class="post-form">
+            <div class="form-group">
+                <label for="post-title">标题</label>
+                <input type="text" id="post-title" name="title" required placeholder="请输入帖子标题" maxlength="200">
+            </div>
+            <div class="form-group">
+                <label for="post-category">分类</label>
+                <select id="post-category" name="category">
+                    <option value="问答">问答</option>
+                    <option value="讨论">讨论</option>
+                    <option value="分享">分享</option>
+                    <option value="求助">求助</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="post-content">内容</label>
+                <textarea id="post-content" name="content" required placeholder="请输入帖子内容..." rows="15"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">发表</button>
+                <a href="{{ url_for('main.community') }}" class="btn btn-secondary">取消</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.create-post-page {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(74, 144, 226, 0.3);
+}
+
+.create-post-page h1 {
+    color: #4A90E2;
+    text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+    margin-bottom: 2rem;
+}
+
+.post-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    color: #000000;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba(74, 144, 226, 0.3);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #000000;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #4A90E2;
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 300px;
+    font-family: inherit;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #000000;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('create-post-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const title = document.getElementById('post-title').value.trim();
+    const category = document.getElementById('post-category').value;
+    const content = document.getElementById('post-content').value.trim();
+    
+    if (!title || !content) {
+        showMessage('标题和内容不能为空', 'error');
+        return;
+    }
+    
+    try {
+        const result = await apiRequest('/api/forum/post', 'POST', {
+            title: title,
+            category: category,
+            content: content
+        });
+        
+        if (result.success) {
+            showMessage('帖子发表成功', 'success');
+            setTimeout(() => {
+                window.location.href = '/community/forum/' + result.post_id;
+            }, 1000);
+        } else {
+            showMessage(result.message || '发表失败', 'error');
+        }
+    } catch (error) {
+        showMessage('发表失败，请稍后重试', 'error');
+    }
+});
+</script>
+{% endblock %}
+

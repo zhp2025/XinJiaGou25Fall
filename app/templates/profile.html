@@ -21,33 +21,15 @@
     </div>
 
     <div class="profile-tabs">
-        <button class="tab-btn active" onclick="switchTab('favorites')">收藏</button>
-        <button class="tab-btn" onclick="switchTab('likes')">点赞记录</button>
-        <button class="tab-btn" onclick="switchTab('messages')">消息 <span id="message-count" class="badge">0</span></button>
+        <button class="tab-btn active" onclick="switchTab('likes')">点赞记录</button>
         <button class="tab-btn" onclick="switchTab('settings')">设置</button>
     </div>
 
-    <!-- 收藏标签页 -->
-    <div id="tab-favorites" class="tab-content active">
-        <h3>我的收藏</h3>
-        <div id="favorites-list" class="content-list">
-            <p class="empty-message">暂无收藏内容</p>
-        </div>
-    </div>
-
     <!-- 点赞记录标签页 -->
-    <div id="tab-likes" class="tab-content">
+    <div id="tab-likes" class="tab-content active">
         <h3>点赞记录</h3>
         <div id="likes-list" class="content-list">
             <p class="empty-message">暂无点赞记录</p>
-        </div>
-    </div>
-
-    <!-- 消息标签页 -->
-    <div id="tab-messages" class="tab-content">
-        <h3>消息中心</h3>
-        <div id="messages-list" class="messages-list">
-            <p class="empty-message">暂无消息</p>
         </div>
     </div>
 
@@ -208,7 +190,7 @@
     height: 36px;
     border-radius: 50%;
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     border: none;
     cursor: pointer;
     display: flex;
@@ -362,7 +344,7 @@
 
 .badge {
     background: #F44336;
-    color: white;
+    color: #000000;
     border-radius: 10px;
     padding: 2px 6px;
     font-size: 0.75rem;
@@ -429,26 +411,8 @@ function switchTab(tabName) {
     event.target.classList.add('active');
     
     // 加载对应内容
-    if (tabName === 'favorites') {
-        loadFavorites();
-    } else if (tabName === 'likes') {
+    if (tabName === 'likes') {
         loadLikes();
-    } else if (tabName === 'messages') {
-        loadMessages();
-    }
-}
-
-// 加载收藏
-async function loadFavorites() {
-    const result = await apiRequest('/api/profile/favorites', 'GET');
-    if (result.success && result.favorites.length > 0) {
-        const listEl = document.getElementById('favorites-list');
-        listEl.innerHTML = result.favorites.map(item => `
-            <div class="content-item">
-                <h4><a href="${item.url}">${item.title}</a></h4>
-                <p>类型：${item.type} | 收藏时间：${item.timestamp}</p>
-            </div>
-        `).join('');
     }
 }
 
@@ -463,34 +427,6 @@ async function loadLikes() {
                 <p>类型：${item.type} | 点赞时间：${item.timestamp}</p>
             </div>
         `).join('');
-    }
-}
-
-// 加载消息
-async function loadMessages() {
-    const result = await apiRequest('/api/profile/messages', 'GET');
-    if (result.success) {
-        const listEl = document.getElementById('messages-list');
-        if (result.messages.length === 0) {
-            listEl.innerHTML = '<p class="empty-message">暂无消息</p>';
-        } else {
-            listEl.innerHTML = result.messages.map(msg => `
-                <div class="message-item ${msg.read ? '' : 'unread'} ${msg.type}">
-                    <h4>${msg.title}</h4>
-                    <p>${msg.content}</p>
-                    <small>${msg.timestamp}</small>
-                </div>
-            `).join('');
-        }
-        // 更新消息数量
-        const unreadCount = result.messages.filter(m => !m.read).length;
-        const badgeEl = document.getElementById('message-count');
-        if (unreadCount > 0) {
-            badgeEl.textContent = unreadCount;
-            badgeEl.style.display = 'inline';
-        } else {
-            badgeEl.style.display = 'none';
-        }
     }
 }
 
@@ -676,10 +612,9 @@ function logout() {
     }
 }
 
-// 页面加载时加载收藏
+// 页面加载时
 document.addEventListener('DOMContentLoaded', () => {
-    loadFavorites();
-    loadMessages();
+    loadLikes();
     checkFirstLogin();
 });
 </script>

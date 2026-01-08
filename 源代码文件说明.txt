@@ -1,0 +1,314 @@
+AICove 项目源代码文件说明
+==========================================
+
+本文件详细说明项目中各源代码文件的功能和作用。
+
+一、核心应用文件
+----------------
+
+1. run.py
+   功能：Flask应用入口文件
+   说明：启动Web服务器，运行Flask应用
+   使用：python run.py
+
+2. config.py
+   功能：应用配置文件
+   说明：定义配置类，从环境变量读取配置（数据库、API密钥等）
+   重要配置：
+   - SECRET_KEY: Flask会话密钥
+   - DB_HOST, DB_USER, DB_PASSWORD, DB_NAME: 数据库连接信息
+   - DASHSCOPE_API_KEY: 阿里云通义千问API密钥
+   - 其他AI服务API密钥
+
+3. app/__init__.py
+   功能：Flask应用工厂
+   说明：创建和配置Flask应用实例，初始化登录管理器，注册蓝图
+   主要功能：
+   - 创建Flask应用
+   - 配置Flask-Login
+   - 注册路由蓝图（main, auth, api）
+   - 定义MockUser类用于用户认证
+   - 添加静态文件路由（logo、头像等）
+
+4. app/routes.py
+   功能：路由定义文件（核心业务逻辑）
+   说明：包含所有页面路由和API接口
+   主要路由：
+   - 主页路由：/ (index)
+   - AI基础：/ai-basics
+   - AI实验室：/ai-lab
+   - 应用场景：/applications
+   - 伦理与未来：/ethics
+   - 资源中心：/resources
+   - 社区：/community
+   - 搜索：/search
+   - 用户相关：/profile, /my_favorites, /messages等
+   - 管理员：/admin, /super-admin
+   主要功能：
+   - 页面渲染
+   - 数据查询和过滤
+   - 搜索功能（普通、高级、AI搜索）
+   - 用户认证和权限控制
+
+5. app/models.py
+   功能：数据库模型定义
+   说明：使用SQLAlchemy定义数据库表结构（当前未启用，使用pymysql直接操作）
+   包含模型：
+   - User: 用户模型
+   - Article: 文章模型
+   - Tool: 工具模型
+   - Case: 案例模型
+   - ForumPost: 论坛帖子模型
+   - Comment: 评论模型
+   - Term: 术语模型
+   - Resource: 资源模型
+   - EthicsTopic: 伦理专题模型
+
+6. app/mock_data.py
+   功能：模拟数据文件（数据访问层）
+   说明：包含模拟数据和数据访问函数
+   主要功能：
+   - 定义MOCK_USERS, MOCK_ARTICLES等模拟数据
+   - get_user_by_username(): 从数据库或MOCK_USERS获取用户
+   - get_user_by_id(): 从数据库或MOCK_USERS获取用户
+   - get_all_terms_from_db(): 从数据库或MOCK_TERMS获取所有术语
+   注意：优先从数据库读取，失败时回退到模拟数据
+
+7. app/ai_service.py
+   功能：AI服务模块
+   说明：集成各种AI服务API
+   主要功能：
+   - ai_search(): 使用qwen-max模型进行智能搜索
+   - chat_with_model(): 与AI模型对话
+   - generate_image_prompt(): 优化图像生成提示词
+   - translate_text(): 文本翻译
+   - generate_code(): 代码生成
+   - research_analysis(): 深度研究分析
+   - generate_ppt(): PPT内容生成
+   支持的AI服务：
+   - 阿里云通义千问（DashScope）
+   - DeepSeek
+   - Kimi (Moonshot AI)
+   - Google Gemini
+   - OpenAI
+
+8. app/tagging_system.py
+   功能：标记体系模块
+   说明：统一管理所有标记和分类，基于标记体系.xlsx中的定义
+   主要功能：
+   - 定义功能模块分类（FUNCTIONAL_MODULES）
+   - 定义内容类型分类（CONTENT_TYPES）
+   - normalize_article_category(): 规范化文章分类
+   - normalize_term_category(): 规范化术语分类
+   - get_all_categories_for_filter(): 获取所有分类用于筛选
+
+9. app/category_utils.py
+   功能：分类工具函数
+   说明：提供分类筛选和过滤功能
+   主要功能：
+   - filter_items_by_category(): 根据分类筛选数据
+   - get_all_categories_for_filter(): 获取可用于筛选的分类列表
+
+10. app/middleware.py
+    功能：已合并到app/__init__.py
+    说明：record_visit函数已移至app/__init__.py
+
+二、数据库相关文件
+----------------
+
+11. init_schema.sql
+    功能：数据库初始化脚本（合并了database_schema.sql和database_enhancements.sql）
+    说明：包含数据库创建、表结构、索引、视图、触发器、存储过程、函数等
+    内容：
+    - 创建数据库IA
+    - 创建19个表
+    - 创建10个复合索引
+    - 创建5个视图
+    - 创建6个触发器
+    - 创建4个存储过程
+    - 创建2个函数
+
+12. insert_mock_data.sql
+    功能：初始数据插入脚本
+    说明：包含初始数据的INSERT语句，包括默认用户（superadmin, admin, user）
+    注意：created_at字段会自动使用DEFAULT CURRENT_TIMESTAMP，无需手动指定
+
+14. db_utils.py
+    功能：数据库工具脚本（合并了create_database.py, insert_data.py, create_users.py, apply_database_enhancements.py, init_system.py, generate_insert_sql.py）
+    说明：包含所有数据库相关操作函数和系统初始化功能
+    主要函数：
+    - create_database(): 创建数据库和表结构（使用init_schema.sql）
+    - insert_mock_data(): 插入初始数据（包含默认用户）
+    - create_default_users(): 已废弃，默认用户已在insert_mock_data.sql中定义
+    - apply_enhancements(): 已废弃，增强功能已在init_schema.sql中定义
+    - generate_insert_sql(): 从mock_data.py生成insert_mock_data.sql文件
+    - init_system(): 系统初始化，一键完成数据库创建、数据插入和启动服务器
+    使用：
+    - python db_utils.py create - 创建数据库（包含所有表、索引、视图、触发器、存储过程、函数）
+    - python db_utils.py insert - 插入数据（包含默认用户）
+    - python db_utils.py generate-sql - 从mock_data.py生成insert_mock_data.sql
+    - python db_utils.py init - 一键初始化系统（创建数据库、插入数据、启动服务器）
+
+
+四、前端模板文件
+----------------
+
+24. app/templates/base.html
+    功能：基础模板
+    说明：所有页面的基础模板，包含导航栏、页脚等公共部分
+
+25. app/templates/index.html
+    功能：首页模板
+    说明：展示平台定位、新手引导、热门内容等
+
+26. app/templates/ai_basics.html
+    功能：AI基础页面模板
+    说明：展示核心概念（文字）、学习路径、AI发展史
+
+27. app/templates/ai_lab.html
+    功能：AI实验室页面模板
+    说明：包含工具集和模型透视功能
+
+28. app/templates/applications.html
+    功能：应用场景页面模板
+    说明：展示案例库和工具箱
+
+29. app/templates/ethics.html
+    功能：伦理与未来页面模板
+    说明：展示伦理专题列表
+
+30. app/templates/ethics_topic.html
+    功能：伦理专题详情页面模板
+    说明：展示专题详细内容和评论
+
+31. app/templates/resources.html
+    功能：资源中心页面模板
+    说明：展示AI术语表（支持搜索和字母筛选）、推荐阅读（书籍、论文、期刊）、课程推荐（YouTube课程，支持按讲师筛选）
+
+32. app/templates/community.html
+    功能：社区主页模板
+    说明：展示社区导航和功能入口
+
+33. app/templates/ai_assistant.html
+    功能：智能助教页面模板
+    说明：基于RAG技术的站内智能问答
+
+34. app/templates/forum.html
+    功能：论坛页面模板
+    说明：展示论坛帖子列表，支持搜索、筛选、分页
+
+35. app/templates/forum_post.html
+    功能：论坛帖子详情页面模板
+    说明：展示帖子内容、评论、回复，支持点赞、收藏
+
+36. app/templates/search.html
+    功能：搜索页面模板
+    说明：包含普通搜索、高级检索、AI搜索三种模式
+
+37. app/templates/login.html
+    功能：登录页面模板
+    说明：用户登录界面
+
+38. app/templates/register.html
+    功能：注册页面模板
+    说明：用户注册界面
+
+39. app/templates/forgot_password.html
+    功能：忘记密码页面模板
+    说明：找回密码界面
+
+40. app/templates/profile.html
+    功能：个人中心页面模板
+    说明：用户个人信息、设置、修改密码、上传头像等
+
+41. app/templates/my_favorites.html
+    功能：我的收藏页面模板
+    说明：展示用户收藏的内容
+
+42. app/templates/my_posts.html
+    功能：我的帖子页面模板
+    说明：展示用户发布的帖子
+
+43. app/templates/messages.html
+    功能：消息页面模板
+    说明：展示用户收到的消息
+
+44. app/templates/create_post.html
+    功能：创建帖子页面模板
+    说明：用户发布新帖子的界面
+
+45. app/templates/article_detail.html
+    功能：文章详情页面模板
+    说明：展示文章详细内容
+
+46. app/templates/admin_dashboard.html
+    功能：管理员后台页面模板
+    说明：数据大屏、用户反馈等管理功能
+
+47. app/templates/super_admin.html
+    功能：超级管理员页面模板
+    说明：用户管理、修改用户身份等功能
+
+48. app/templates/about.html
+    功能：关于我们页面模板
+    说明：联系信息、公司介绍等
+
+49. app/templates/privacy.html
+    功能：隐私政策页面模板
+
+50. app/templates/guide.html
+    功能：使用指南页面模板
+
+51. app/templates/404.html
+    功能：404错误页面模板
+
+52. app/templates/500.html
+    功能：500错误页面模板
+
+五、静态资源文件
+----------------
+
+53. app/static/css/style.css
+    功能：全局样式表
+    说明：定义网站的整体样式、布局、动画等
+
+54. app/static/js/main.js
+    功能：全局JavaScript文件
+    说明：包含通用JavaScript函数
+    主要功能：
+    - apiRequest(): API请求封装
+    - showMessage(): 消息提示
+    - toggleUserMenu(): 用户菜单切换
+    - 登录、注册表单处理
+
+55. app/static/js/user_guide.js
+    功能：用户引导JavaScript
+    说明：处理新手引导功能
+
+六、配置文件
+------------
+
+56. requirements.txt
+    功能：Python依赖包列表
+    说明：列出项目所需的所有Python包及其版本
+
+57. .env
+    功能：环境变量配置文件
+    说明：存储敏感配置信息（数据库密码、API密钥等）
+    注意：此文件不应提交到版本控制系统
+
+七、其他文件
+------------
+
+58. README.md
+    功能：项目说明文档
+    说明：项目介绍、功能特性、快速开始指南等
+
+59. 标记体系.xlsx
+    功能：标记体系定义文件
+    说明：定义所有分类和标记的Excel文件（供参考）
+
+==========================================
+文件说明完成
+更新日期：2025-12-30
+

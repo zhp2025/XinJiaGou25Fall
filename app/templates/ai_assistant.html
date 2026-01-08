@@ -101,7 +101,7 @@
 
 .message.user {
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     margin-left: auto;
 }
 
@@ -121,6 +121,45 @@
     border-left: 3px solid var(--primary-color);
     font-size: 0.9rem;
     margin-top: 0.5rem;
+}
+
+.feedback-form-container {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    max-width: 100%;
+}
+
+.feedback-form {
+    padding: 1rem;
+}
+
+.feedback-title {
+    margin-bottom: 0.75rem;
+    color: #000000;
+    font-weight: 600;
+}
+
+.feedback-form textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid rgba(74, 144, 226, 0.3);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #000000;
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    resize: vertical;
+}
+
+.feedback-form textarea:focus {
+    outline: none;
+    border-color: #4A90E2;
+    box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+}
+
+.feedback-actions {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .chat-input-container {
@@ -175,6 +214,11 @@ async function askAssistant() {
                     addAssistantMessage('source', `来源：${source}`);
                 });
             }
+            
+            // 如果没有找到内容，显示反馈入口
+            if (result.no_content_found) {
+                showFeedbackForm(question);
+            }
         } else {
             addAssistantMessage('assistant', `抱歉，发生了错误：${result.message || '未知错误'}`);
         }
@@ -194,6 +238,52 @@ function addAssistantMessage(role, content, isLoading = false) {
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
     return messageId;
+}
+
+function showFeedbackForm(question) {
+    const messagesDiv = document.getElementById('assistant-messages');
+    const feedbackDiv = document.createElement('div');
+    feedbackDiv.className = 'message feedback-form-container';
+    feedbackDiv.innerHTML = `
+        <div class="feedback-form">
+            <p class="feedback-title">💡 未找到相关内容？请告诉我们您的问题：</p>
+            <textarea id="feedback-content" placeholder="请描述您想了解的内容..." rows="3">${question}</textarea>
+            <div class="feedback-actions">
+                <button onclick="submitFeedback('${question.replace(/'/g, "\\'")}')" class="btn btn-primary btn-small">提交反馈</button>
+            </div>
+        </div>
+    `;
+    messagesDiv.appendChild(feedbackDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+async function submitFeedback(originalQuestion) {
+    const feedbackContent = document.getElementById('feedback-content').value.trim();
+    if (!feedbackContent) {
+        showMessage('请输入反馈内容', 'error');
+        return;
+    }
+    
+    try {
+        const result = await apiRequest('/api/feedback', 'POST', {
+            type: 'ai_assistant',
+            question: originalQuestion,
+            content: feedbackContent
+        });
+        
+        if (result.success) {
+            showMessage('反馈提交成功，我们会尽快完善相关内容', 'success');
+            // 移除反馈表单
+            const feedbackContainer = document.querySelector('.feedback-form-container');
+            if (feedbackContainer) {
+                feedbackContainer.remove();
+            }
+        } else {
+            showMessage(result.message || '反馈提交失败', 'error');
+        }
+    } catch (error) {
+        showMessage('反馈提交失败，请稍后重试', 'error');
+    }
 }
 </script>
 {% endblock %}

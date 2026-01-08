@@ -1,0 +1,29 @@
+# Ngrok 配置文件
+# 使用此配置文件可以同时运行多个端点，只占用一个会话
+# 使用方法: ngrok start --all
+# 或者: ngrok start web api (启动指定的端点)
+
+version: "2"
+authtoken: ${NGROK_AUTH_TOKEN}  # 从环境变量读取，如果没有设置则使用免费模式
+
+# 定义多个隧道端点
+tunnels:
+  # Web 应用主端点 (HTTPS)
+  web:
+    proto: http
+    addr: 5000
+    bind_tls: true
+    inspect: true  # 启用 Web 界面检查
+    
+  # Web 应用备用端点 (HTTP)
+  web-http:
+    proto: http
+    addr: 5000
+    bind_tls: false
+    inspect: false
+
+# 全局配置
+# region: us  # 可选：设置区域 (us, eu, ap, au, sa, jp, in)
+# console_ui: true  # 启用控制台 UI
+# console_ui_color: transparent  # 控制台 UI 颜色
+

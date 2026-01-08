@@ -34,7 +34,7 @@ function showMessage(message, type = 'info') {
         right: 20px;
         padding: 1rem 2rem;
         background: ${type === 'success' ? '#50C878' : type === 'error' ? '#E74C3C' : '#4A90E2'};
-        color: white;
+        color: #000000;
         border-radius: 4px;
         z-index: 10000;
         box-shadow: 0 4px 10px rgba(0,0,0,0.2);
@@ -198,4 +198,16 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.opacity = '1';
     }, 100);
 });
+
+// 切换用户菜单
+function toggleUserMenu(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const dropdown = document.getElementById('userMenuDropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+    }
+}
 

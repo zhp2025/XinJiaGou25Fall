@@ -9,6 +9,10 @@ class Config:
     """应用配置类"""
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'aicove-secret-key-change-in-production'
     
+    # Flask调试模式配置（默认关闭，避免ngrok重复创建问题）
+    # 如需开启，在.env文件中设置 FLASK_DEBUG=True
+    DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1', 'yes')
+    
     # 暂时不使用数据库
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
     #     'mysql+pymysql://root:password@localhost/aicove?charset=utf8mb4'
@@ -28,4 +32,5 @@ class Config:
     KIMI_API_KEY = os.environ.get('KIMI_API_KEY', '')  # Kimi (Moonshot AI)
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')  # Google Gemini
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')  # OpenAI
+    VOLC_SEEDREAM_API_KEY = os.environ.get('VOLC_SEEDREAM_API_KEY', '')  # 火山引擎Seedream图像生成
 

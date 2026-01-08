@@ -1,14 +1,13 @@
 from flask import Flask
 from flask_login import LoginManager
 from config import Config
+from datetime import date
 
-# 暂时不使用数据库，使用 session 进行用户管理
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 login_manager.login_message = '请先登录以访问此页面'
 
 class MockUser:
-    """模拟用户类，用于 Flask-Login"""
     def __init__(self, user_data):
         self.id = user_data['id']
         self.username = user_data['username']
@@ -23,6 +22,13 @@ class MockUser:
     def get_id(self):
         return str(self.id)
 
+def record_visit(user_id):
+    """记录访问统计"""
+    if user_id:
+        from app.mock_data import MOCK_VISIT_STATS
+        today_str = str(date.today())
+        MOCK_VISIT_STATS[today_str] = MOCK_VISIT_STATS.get(today_str, 0) + 1
+
 @login_manager.user_loader
 def load_user(user_id):
     from app.mock_data import get_user_by_id
@@ -32,28 +38,22 @@ def load_user(user_id):
     return None
 
 def create_app(config_class=Config):
-    """应用工厂函数"""
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # 初始化登录管理器
     login_manager.init_app(app)
     
-    # 添加模板过滤器，安全访问字典
     @app.template_filter('get')
     def dict_get(value, key, default=None):
-        """安全获取字典值"""
         if isinstance(value, dict):
             return value.get(key, default)
         return getattr(value, key, default)
     
-    # 注册蓝图
     from app.routes import main_bp, auth_bp, api_bp
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(api_bp, url_prefix='/api')
     
-    # 添加静态文件路由（用于 logo）
     @app.route('/AICove.jpg')
     def serve_logo():
         from flask import send_from_directory, abort
@@ -61,11 +61,8 @@ def create_app(config_class=Config):
         logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'AICove.jpg')
         if os.path.exists(logo_path):
             return send_from_directory(os.path.dirname(logo_path), 'AICove.jpg')
-        else:
-            # 如果 logo 不存在，返回 404（前端会通过 onerror 隐藏）
-            abort(404)
+        abort(404)
     
-    # 添加默认头像路由
     @app.route('/default.jpg')
     def serve_default_avatar():
         from flask import send_from_directory, abort
@@ -73,11 +70,27 @@ def create_app(config_class=Config):
         avatar_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'default.jpg')
         if os.path.exists(avatar_path):
             return send_from_directory(os.path.dirname(avatar_path), 'default.jpg')
-        else:
-            # 如果头像不存在，返回 404（前端会通过 onerror 隐藏）
-            abort(404)
+        abort(404)
     
-    # 添加错误处理
+    @app.route('/backgroud/bottom.jpg')
+    def serve_bottom_background():
+        from flask import send_from_directory, abort
+        import os
+        bg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backgroud', 'bottom.jpg')
+        if os.path.exists(bg_path):
+            return send_from_directory(os.path.dirname(bg_path), 'bottom.jpg')
+        abort(404)
+    
+    @app.route('/AIGCimages/<filename>')
+    def serve_aigc_image(filename):
+        from flask import send_from_directory, abort
+        import os
+        images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'AIGCimages')
+        file_path = os.path.join(images_dir, filename)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return send_from_directory(images_dir, filename)
+        abort(404)
+    
     @app.errorhandler(404)
     def not_found(error):
         from flask import render_template

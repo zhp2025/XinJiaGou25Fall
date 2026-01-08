@@ -11,6 +11,33 @@
 </div>
 
 <div class="container">
+    <!-- 论坛搜索框 -->
+    <div class="forum-search-box">
+        <form class="forum-search-form" action="{{ url_for('main.forum') }}" method="GET">
+            <input type="text" name="q" placeholder="搜索论坛内容..." class="forum-search-input" value="{{ search_query or '' }}">
+            <button type="submit" class="forum-search-btn">🔍</button>
+        </form>
+    </div>
+
+    {% if search_query %}
+        <div class="search-results-header">
+            <p>搜索 "<strong>{{ search_query }}</strong>" 的结果：共找到 {{ posts.total }} 条</p>
+        </div>
+    {% endif %}
+
+    <!-- 论坛导航 -->
+    <div class="forum-nav">
+        <a href="{{ url_for('main.forum') }}" class="nav-item {% if request.endpoint == 'main.forum' %}active{% endif %}">看看</a>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.create_post') }}" class="nav-item nav-post">
+            <span class="nav-icon">✈️</span>
+            发表
+        </a>
+        <a href="{{ url_for('main.my_posts') }}" class="nav-item {% if request.endpoint == 'main.my_posts' %}active{% endif %}">我的帖子</a>
+        {% endif %}
+        <a href="{{ url_for('main.about') }}" class="nav-item {% if request.endpoint == 'main.about' %}active{% endif %}">关于我们</a>
+    </div>
+
     {% if current_user.is_authenticated %}
     <div class="create-post-section">
         <button class="btn btn-primary" onclick="showCreatePostForm()">发布新帖</button>
@@ -60,10 +87,23 @@
             <div class="post-footer">
                 <div class="post-stats">
                     <span>👁 {{ post.views }}</span>
+                    {% if current_user.is_authenticated %}
+                    <button class="post-like-btn" onclick="likePost({{ post.id }}, event)" id="like-btn-{{ post.id }}">
+                        <span class="like-icon">🤍</span> <span id="likes-{{ post.id }}">{{ post.likes }}</span>
+                    </button>
+                    {% else %}
                     <span>❤️ {{ post.likes }}</span>
+                    {% endif %}
                     <span>💬 {{ post.get('comments_count', 0) }}</span>
                 </div>
-                <a href="{{ url_for('main.forum_post', post_id=post.id) }}" class="btn btn-outline btn-small">查看详情</a>
+                <div class="post-actions-right">
+                    {% if current_user.is_authenticated %}
+                    <button class="post-favorite-btn" onclick="favoritePost({{ post.id }}, event)" id="favorite-btn-{{ post.id }}" title="收藏">
+                        <span class="favorite-icon">⭐</span>
+                    </button>
+                    {% endif %}
+                    <a href="{{ url_for('main.forum_post', post_id=post.id) }}" class="btn btn-outline btn-small">查看详情</a>
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -164,7 +204,7 @@
 .post-category {
     padding: 0.25rem 0.75rem;
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     border-radius: 12px;
     font-size: 0.8rem;
 }
@@ -192,6 +232,46 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.post-actions-right {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.post-like-btn, .post-favorite-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.post-like-btn:hover, .post-favorite-btn:hover {
+    background: #f5f5f5;
+    border-color: var(--primary-color);
+}
+
+.post-like-btn.liked {
+    border-color: #FF5722;
+    background: rgba(255, 87, 34, 0.1);
+}
+
+.post-favorite-btn.favorited {
+    border-color: #FFC107;
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.post-favorite-btn.favorited .favorite-icon {
+    color: #FFC107;
 }
 
 .post-stats {
@@ -199,6 +279,122 @@
     gap: 1.5rem;
     font-size: 0.9rem;
     color: var(--text-light);
+}
+
+.forum-search-box {
+    margin: 1.5rem 0;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.forum-search-form {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.forum-search-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.forum-search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.forum-search-btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary-color);
+    color: #000000;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+.forum-search-btn:hover {
+    background: #357ABD;
+}
+
+.search-results-header {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f0f7ff;
+    border-left: 4px solid var(--primary-color);
+    border-radius: 4px;
+    color: var(--text-color);
+}
+
+.search-results-header strong {
+    color: var(--primary-color);
+}
+
+.forum-nav {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.nav-item {
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: var(--text-color);
+    border-radius: 4px;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-item.active {
+    background: var(--primary-color);
+    color: #000000;
+}
+
+.nav-item:hover {
+    background: #f5f5f5;
+}
+
+.nav-item.active:hover {
+    background: var(--primary-color);
+}
+
+.nav-post {
+    background: var(--primary-color);
+    color: #000000;
+}
+
+.nav-post:hover {
+    background: #357ABD;
+}
+
+.nav-icon {
+    font-size: 1rem;
+}
+
+.message-badge {
+    display: inline-block;
+    background: #FF5722;
+    color: #000000;
+    border-radius: 10px;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.7rem;
+    margin-left: 0.25rem;
+    min-width: 18px;
+    text-align: center;
 }
 
 .pagination {
@@ -219,13 +415,13 @@
 
 .page-link:hover {
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     border-color: var(--primary-color);
 }
 
 .page-link.active {
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     border-color: var(--primary-color);
 }
 </style>
@@ -260,6 +456,80 @@ async function createPost(event) {
         showMessage(result.message || '发布失败', 'error');
     }
 }
+
+async function likePost(postId, event) {
+    if (event) event.stopPropagation();
+    const result = await apiRequest(`/api/forum/${postId}/like`, 'POST');
+    if (result.success) {
+        document.getElementById(`likes-${postId}`).textContent = result.likes;
+        const likeBtn = document.getElementById(`like-btn-${postId}`);
+        const likeIcon = likeBtn.querySelector('.like-icon');
+        if (result.is_liked) {
+            likeIcon.textContent = '❤️';
+            likeBtn.classList.add('liked');
+        } else {
+            likeIcon.textContent = '🤍';
+            likeBtn.classList.remove('liked');
+        }
+    }
+}
+
+async function favoritePost(postId, event) {
+    if (event) event.stopPropagation();
+    const result = await apiRequest(`/api/forum/${postId}/favorite`, 'POST');
+    if (result.success) {
+        const btn = document.getElementById(`favorite-btn-${postId}`);
+        if (result.is_favorited) {
+            btn.classList.add('favorited');
+            showMessage('收藏成功', 'success');
+        } else {
+            btn.classList.remove('favorited');
+            showMessage('已取消收藏', 'info');
+        }
+    }
+}
+
+// 页面加载时初始化点赞和收藏状态
+document.addEventListener('DOMContentLoaded', async function() {
+    if (window.currentUser && window.currentUser.is_authenticated) {
+        const postCards = document.querySelectorAll('.post-card');
+        for (const card of postCards) {
+            const postIdMatch = card.querySelector('[id^="like-btn-"]');
+            if (postIdMatch) {
+                const postId = parseInt(postIdMatch.id.replace('like-btn-', ''));
+                try {
+                    const status = await apiRequest(`/api/forum/${postId}/status`, 'GET');
+                    if (status.success) {
+                        // 更新点赞状态
+                        const likeBtn = document.getElementById(`like-btn-${postId}`);
+                        if (likeBtn) {
+                            const likeIcon = likeBtn.querySelector('.like-icon');
+                            if (status.is_liked) {
+                                likeIcon.textContent = '❤️';
+                                likeBtn.classList.add('liked');
+                            } else {
+                                likeIcon.textContent = '🤍';
+                                likeBtn.classList.remove('liked');
+                            }
+                        }
+                        
+                        // 更新收藏状态
+                        const favoriteBtn = document.getElementById(`favorite-btn-${postId}`);
+                        if (favoriteBtn) {
+                            if (status.is_favorited) {
+                                favoriteBtn.classList.add('favorited');
+                            } else {
+                                favoriteBtn.classList.remove('favorited');
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('获取帖子状态失败:', e);
+                }
+            }
+        }
+    }
+});
 </script>
 {% endblock %}
 

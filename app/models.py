@@ -12,7 +12,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), default='user')  # user, admin
+    role = db.Column(db.String(20), default='user')  # user, admin, super_admin
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     avatar = db.Column(db.String(255))
     
@@ -39,7 +39,8 @@ class Article(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
-    content = db.Column(db.Text, nullable=False)
+    content = db.Column(db.Text, nullable=False)  # 简介
+    url = db.Column(db.String(500))  # 实际文章URL
     category = db.Column(db.String(50))  # 热门科普, 最新资讯, 核心概念等
     cover_image = db.Column(db.String(255))
     views = db.Column(db.Integer, default=0)
@@ -178,3 +179,43 @@ class EthicsTopic(db.Model):
     def __repr__(self):
         return f'<EthicsTopic {self.title}>'
 
+
+class AIUsageHistory(db.Model):
+    """AI使用历史记录模型"""
+    __tablename__ = 'ai_usage_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    tool_type = db.Column(db.String(50), nullable=False)  # image-gen, writing, translation, programming, ppt
+    input_text = db.Column(db.Text)  # 用户输入
+    output_text = db.Column(db.Text)  # AI输出
+    image_url = db.Column(db.String(500))  # 生成的图片URL
+    file_path = db.Column(db.String(500))  # 生成的文件路径
+    model_used = db.Column(db.String(100))  # 使用的AI模型
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    # 关系
+    user = db.relationship('User', backref='ai_usage_history')
+    
+    def __repr__(self):
+        return f'<AIUsageHistory {self.tool_type} by user {self.user_id}>'
+
+
+class AIConversationHistory(db.Model):
+    """AI对话历史记录模型（支持多轮对话）"""
+    __tablename__ = 'ai_conversation_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    tool_type = db.Column(db.String(50), nullable=False)  # image-gen, writing, translation, programming, ppt
+    title = db.Column(db.String(200))  # 对话标题（自动生成或用户自定义）
+    conversation_data = db.Column(db.Text, nullable=False)  # JSON格式存储对话内容
+    model_used = db.Column(db.String(100))  # 使用的AI模型
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # 关系
+    user = db.relationship('User', backref='ai_conversation_history')
+    
+    def __repr__(self):
+        return f'<AIConversationHistory {self.tool_type} by user {self.user_id}>'

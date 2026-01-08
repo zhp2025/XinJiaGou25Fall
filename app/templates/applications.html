@@ -31,25 +31,33 @@
                 <ul class="sidebar-list">
                     <li class="sidebar-item">
                         <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="filterCases('艺术'); return false;">AI艺术/创意</a>
+                        <a href="#" onclick="filterCases('all'); return false;">全部</a>
                     </li>
                     <li class="sidebar-item">
                         <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="filterCases('教育'); return false;">AI教育</a>
+                        <a href="#" onclick="filterCases('AI+艺术'); return false;">AI艺术/创意</a>
                     </li>
                     <li class="sidebar-item">
                         <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="filterCases('医疗'); return false;">AI医疗</a>
+                        <a href="#" onclick="filterCases('AI+教育'); return false;">AI教育</a>
                     </li>
                     <li class="sidebar-item">
                         <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="filterCases('办公'); return false;">AI办公</a>
+                        <a href="#" onclick="filterCases('AI+医疗'); return false;">AI医疗</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterCases('AI+办公'); return false;">AI办公</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterCases('AI+科研'); return false;">AI科研</a>
                     </li>
                 </ul>
             </div>
             <div class="content-main">
                 <div class="cases-list">
-                    {% for case in cases %}
+                    {% for case in cases.items %}
                     <div class="case-card card-animate hover-lift" data-industry="{{ case.industry }}">
                         {% if case.image %}
                         <img src="{{ case.image }}" alt="{{ case.title }}" class="case-image">
@@ -65,20 +73,41 @@
                                 {% endfor %}
                             </div>
                             {% endif %}
-                            {% if case.external_link %}
-                            <a href="{{ case.external_link }}" target="_blank" class="btn btn-outline">查看详情</a>
+                            {% if case.external_link and case.external_link != '#' %}
+                                {% if case.external_link.startswith('http://') or case.external_link.startswith('https://') %}
+                                <a href="{{ case.external_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">查看详情</a>
+                                {% else %}
+                                <a href="{{ case.external_link }}" class="btn btn-outline">查看详情</a>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 <!-- 分页 -->
+                {% if cases.pages > 1 %}
                 <div class="pagination">
-                    <span class="page-number active">1</span>
-                    <span class="page-number">2</span>
-                    <span class="page-number">3</span>
-                    <span class="page-ellipsis">...</span>
+                    {% if cases.has_prev %}
+                    <a href="{{ url_for('main.applications', page=cases.prev_num) }}" class="page-link">上一页</a>
+                    {% endif %}
+                    
+                    {% for page_num in cases.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == cases.page %}
+                            <span class="page-link active">{{ page_num }}</span>
+                            {% else %}
+                            <a href="{{ url_for('main.applications', page=page_num) }}" class="page-link">{{ page_num }}</a>
+                            {% endif %}
+                        {% else %}
+                            <span class="page-link">...</span>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if cases.has_next %}
+                    <a href="{{ url_for('main.applications', page=cases.next_num) }}" class="page-link">下一页</a>
+                    {% endif %}
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -89,6 +118,10 @@
             <div class="sidebar-left">
                 <h3 class="sidebar-title">分类列表</h3>
                 <ul class="sidebar-list">
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="filterTools('all'); return false;">全部</a>
+                    </li>
                     <li class="sidebar-item">
                         <span class="sidebar-arrow">▶</span>
                         <a href="#" onclick="filterTools('大模型'); return false;">大模型</a>
@@ -119,7 +152,13 @@
                         <div class="tool-footer">
                             <span class="tool-category">{{ tool.category }}</span>
                             {% if tool.url %}
-                            <a href="{{ tool.url }}" target="_blank" class="btn btn-primary btn-small">访问</a>
+                            {% if tool.url and tool.url != '#' %}
+                                {% if tool.url.startswith('http://') or tool.url.startswith('https://') %}
+                                <a href="{{ tool.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-small">访问</a>
+                                {% else %}
+                                <a href="{{ tool.url }}" class="btn btn-primary btn-small">访问</a>
+                                {% endif %}
+                            {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -213,7 +252,7 @@
 .filter-btn.active,
 .filter-btn:hover {
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     border-color: var(--primary-color);
 }
 
@@ -249,7 +288,7 @@
     display: inline-block;
     padding: 0.25rem 0.75rem;
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     border-radius: 12px;
     font-size: 0.8rem;
     margin-bottom: 0.5rem;
@@ -355,14 +394,20 @@ function switchTab(tabName, buttonElement) {
 
 function filterCases(industry) {
     const cards = document.querySelectorAll('.case-card');
-    const buttons = document.querySelectorAll('#cases-tab .filter-btn');
+    const sidebarItems = document.querySelectorAll('#cases-tab .sidebar-item');
     
-    buttons.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    // 更新侧边栏激活状态
+    sidebarItems.forEach(item => {
+        item.classList.remove('active');
+    });
+    if (event && event.target) {
+        event.target.closest('.sidebar-item').classList.add('active');
+    }
     
+    // 筛选卡片
     cards.forEach(card => {
         if (industry === 'all' || card.dataset.industry === industry) {
-            card.style.display = 'block';
+            card.style.display = 'flex';
         } else {
             card.style.display = 'none';
         }
@@ -371,11 +416,17 @@ function filterCases(industry) {
 
 function filterTools(category) {
     const cards = document.querySelectorAll('.tool-card');
-    const buttons = document.querySelectorAll('#tools-tab .filter-btn');
+    const sidebarItems = document.querySelectorAll('#tools-tab .sidebar-item');
     
-    buttons.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    // 更新侧边栏激活状态
+    sidebarItems.forEach(item => {
+        item.classList.remove('active');
+    });
+    if (event && event.target) {
+        event.target.closest('.sidebar-item').classList.add('active');
+    }
     
+    // 筛选卡片
     cards.forEach(card => {
         if (category === 'all' || card.dataset.category === category) {
             card.style.display = 'block';

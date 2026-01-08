@@ -23,8 +23,42 @@
 
         <section>
             <h2>联系方式</h2>
-            <p>邮箱：contact@aicove.com</p>
-            <p>地址：待定</p>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <strong>邮箱：</strong>
+                    <a href="mailto:contact@aicove.com">contact@aicove.com</a>
+                </div>
+                <div class="contact-item">
+                    <strong>客服热线：</strong>
+                    <span>400-XXX-XXXX（工作日 9:00-18:00）</span>
+                </div>
+                <div class="contact-item">
+                    <strong>办公地址：</strong>
+                    <span>北京市海淀区中关村大街XX号XX大厦X层</span>
+                </div>
+                <div class="contact-item">
+                    <strong>邮编：</strong>
+                    <span>100000</span>
+                </div>
+                <div class="contact-item">
+                    <strong>微信公众号：</strong>
+                    <span>AICove官方（微信号：AICove2024）</span>
+                </div>
+                <div class="contact-item">
+                    <strong>官方微博：</strong>
+                    <a href="#">@AICove官方</a>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>我们的愿景</h2>
+            <p>让AI学习变得简单、有趣、高效，成为每个人探索人工智能世界的起点。</p>
+        </section>
+
+        <section>
+            <h2>合作伙伴</h2>
+            <p>我们与多家AI技术公司和教育机构建立了合作关系，共同推动AI教育的发展。如果您有意与我们合作，欢迎通过上述联系方式与我们取得联系。</p>
         </section>
     </div>
 </div>
@@ -53,6 +87,34 @@
 .about-content p {
     line-height: 1.8;
     color: var(--text-color);
+}
+
+.contact-info {
+    margin-top: 1rem;
+}
+
+.contact-item {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: var(--light-color);
+    border-radius: 4px;
+    line-height: 1.6;
+}
+
+.contact-item strong {
+    color: var(--primary-color);
+    margin-right: 0.5rem;
+    min-width: 100px;
+    display: inline-block;
+}
+
+.contact-item a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.contact-item a:hover {
+    text-decoration: underline;
 }
 </style>
 {% endblock %}

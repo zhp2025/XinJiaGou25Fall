@@ -8,14 +8,14 @@
     <nav class="breadcrumb">
         <a href="{{ url_for('main.index') }}">首页</a> >
         <a href="{{ url_for('main.ai_basics') }}">AI基础</a> >
-        <span id="breadcrumb-current">三核心概念</span>
+        <span id="breadcrumb-current">核心概念</span>
     </nav>
 
     <!-- 标签按钮 -->
     <div class="tab-buttons">
         <button class="tab-button active" onclick="switchTab('concepts', this)">
             <span class="tab-icon">📋</span>
-            <span>三核心概念</span>
+            <span>核心概念</span>
         </button>
         <button class="tab-button" onclick="switchTab('history', this)">
             <span class="tab-icon">📊</span>
@@ -23,7 +23,7 @@
         </button>
         <button class="tab-button" onclick="switchTab('paths', this)">
             <span class="tab-icon">📋</span>
-            <span>三学习路径</span>
+            <span>学习路径</span>
         </button>
     </div>
 
@@ -31,18 +31,42 @@
     <div id="concepts-tab" class="tab-panel">
         <div class="content-layout">
             <div class="content-main">
+                <!-- 文字概念板块 -->
+                {% if text_concepts %}
                 <section class="concepts-section">
-                    <h2 class="section-title">核心概念</h2>
+                    <h2 class="section-title">📝 文字概念</h2>
                     <div class="concepts-grid">
-                        {% for concept in core_concepts %}
+                        {% for concept in text_concepts %}
                         <div class="concept-card card-animate hover-lift" onclick="showConceptDetail({{ concept.id }})">
                             <h3>{{ concept.term }}</h3>
-                            <p>{{ concept.definition[:100] }}...</p>
+                            <p>{{ concept.definition[:100] }}{% if concept.definition|length > 100 %}...{% endif %}</p>
                             <span class="concept-category">{{ concept.category }}</span>
                         </div>
                         {% endfor %}
                     </div>
                 </section>
+                {% endif %}
+
+
+
+                <!-- 知识图谱概念板块 -->
+                {% if knowledge_graph_concepts %}
+                <section class="concepts-section">
+                    <h2 class="section-title">🕸️ 知识图谱</h2>
+                    <div class="concepts-grid">
+                        {% for concept in knowledge_graph_concepts %}
+                        <div class="concept-card card-animate hover-lift" onclick="showConceptDetail({{ concept.id }})">
+                            <h3>{{ concept.term }}</h3>
+                            <p>{{ concept.definition[:100] }}{% if concept.definition|length > 100 %}...{% endif %}</p>
+                            {% if concept.get('related_terms') %}
+                            <div class="concept-related-badge">🔗 关联概念</div>
+                            {% endif %}
+                            <span class="concept-category">{{ concept.category }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -53,20 +77,32 @@
             <div class="content-main">
                 <section class="ai-history">
                     <h2 class="section-title">AI 发展史</h2>
-                    <div class="timeline">
-                        <div class="timeline-wrapper">
+                    <div class="timeline-container">
+                        <div class="timeline-scroll-wrapper">
+                            <div class="timeline">
+                                <div class="timeline-wrapper">
             <div class="timeline-item">
                 <div class="timeline-year">1950-10</div>
                 <div class="timeline-content">
                     <h3>图灵测试</h3>
-                    <p>艾伦·图灵在《计算机器与智能》论文中提出图灵测试，标志着人工智能概念的诞生</p>
+                    <div class="timeline-main-content">
+                        <p><strong>主要内容：</strong>艾伦·图灵在《计算机器与智能》论文中提出图灵测试，标志着人工智能概念的诞生</p>
+                    </div>
+                    <div class="timeline-significance">
+                        <p><strong>历史意义：</strong>图灵测试成为判断机器是否具有智能的重要标准，为AI研究奠定了理论基础</p>
+                    </div>
                 </div>
             </div>
             <div class="timeline-item">
                 <div class="timeline-year">1956-07</div>
                 <div class="timeline-content">
                     <h3>达特茅斯会议</h3>
-                    <p>约翰·麦卡锡、马文·明斯基等人在达特茅斯学院召开会议，首次提出"人工智能"术语，AI 作为学科正式诞生</p>
+                    <div class="timeline-significance">
+                        <p><strong>历史意义：</strong>首次提出"人工智能"术语，AI 作为学科正式诞生，开启了AI研究的黄金时代</p>
+                    </div>
+                    <div class="timeline-main-content">
+                        <p><strong>主要内容：</strong>约翰·麦卡锡、马文·明斯基等人在达特茅斯学院召开会议，制定了AI研究的基本方向</p>
+                    </div>
                 </div>
             </div>
             <div class="timeline-item">
@@ -238,13 +274,6 @@
                 </div>
             </div>
             <div class="timeline-item">
-                <div class="timeline-year">2023-07</div>
-                <div class="timeline-content">
-                    <h3>Claude 2</h3>
-                    <p>Anthropic 发布 Claude 2，在安全性和推理能力方面取得突破</p>
-                </div>
-            </div>
-            <div class="timeline-item">
                 <div class="timeline-year">2023-12</div>
                 <div class="timeline-content">
                     <h3>Gemini 1.0</h3>
@@ -269,12 +298,14 @@
                 <div class="timeline-year">2024</div>
                 <div class="timeline-content">
                     <h3>AI 爆发年</h3>
-                    <p>Claude 3、Gemini 1.5、Llama 3 等大模型竞相发布，AI 工具广泛应用到各行各业，AI 应用进入黄金时代</p>
+                    <p>Gemini 1.5、Llama 3 等大模型竞相发布，AI 工具广泛应用到各行各业，AI 应用进入黄金时代</p>
                 </div>
             </div>
-            </div>
-        </div>
-    </section>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -351,7 +382,7 @@
     display: flex;
     gap: 1rem;
     margin: 1.5rem 0;
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 2px solid rgba(74, 144, 226, 0.3);
 }
 
 .tab-button {
@@ -398,9 +429,10 @@
     flex-shrink: 0;
     background: white;
     padding: 1.5rem;
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: var(--shadow);
     height: fit-content;
+    border: 1px solid var(--border-color);
 }
 
 .sidebar-title {
@@ -431,7 +463,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    transition: color 0.3s;
+    transition: all 0.3s;
 }
 
 .sidebar-item a:hover {
@@ -456,9 +488,10 @@
     flex: 1;
     background: white;
     padding: 2rem;
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: var(--shadow);
     min-height: 500px;
+    border: 1px solid var(--border-color);
 }
 
 .path-content-area {
@@ -496,7 +529,7 @@
 
 .page-number.active {
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     border-color: var(--primary-color);
 }
 
@@ -506,30 +539,91 @@
 }
 .concepts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
     margin-bottom: 3rem;
+    align-items: stretch;
+}
+
+.concepts-section {
+    margin-bottom: 3rem;
+}
+
+.concepts-section:last-child {
+    margin-bottom: 0;
 }
 
 .concept-card {
     background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
+    padding: 0;
+    border-radius: 12px;
     box-shadow: var(--shadow);
     cursor: pointer;
-    transition: transform 0.3s;
+    transition: all 0.3s;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.concept-card-image {
+    width: 100%;
+    height: 150px;
+    overflow: hidden;
+    background: rgba(74, 144, 226, 0.1);
+}
+
+.concept-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.concept-card h3,
+.concept-card p,
+.concept-card .concept-category {
+    padding: 0 1.5rem;
+}
+
+.concept-card h3 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.concept-card p {
+    margin-bottom: 1rem;
+    padding-bottom: 0;
+}
+
+.concept-card .concept-category {
+    margin-bottom: 1.5rem;
+    display: inline-block;
+    margin-top: auto;
+}
+
+.concept-video-badge,
+.concept-related-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(74, 144, 226, 0.1);
+    color: var(--primary-color);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    margin: 0.5rem 1.5rem;
 }
 
 .concept-card:hover {
     transform: translateY(-5px);
     box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
 }
 
 .concept-category {
     display: inline-block;
     padding: 0.25rem 0.75rem;
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     border-radius: 12px;
     font-size: 0.8rem;
     margin-top: 0.5rem;
@@ -551,7 +645,7 @@
 
 .path-header {
     background: linear-gradient(135deg, var(--primary-color), #667eea);
-    color: white;
+    color: #000000;
     padding: 1.5rem;
     display: flex;
     justify-content: space-between;
@@ -585,43 +679,104 @@
     font-weight: bold;
 }
 
-.timeline {
+.timeline-container {
     position: relative;
-    padding: 2rem 0;
+    width: 1200px;
+    max-width: 90%;
+    height: 650px;
+    margin: 2rem auto;
+    overflow: hidden;
+    border: 2px solid rgba(74, 144, 226, 0.4);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.timeline-scroll-wrapper {
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary-color) rgba(0,0,0,0.1);
+    scrollbar-width: auto;
+    scrollbar-color: var(--primary-color) rgba(0,0,0,0.15);
+    padding: 1.5rem 0;
     width: 100%;
+    height: 100%;
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    box-sizing: border-box;
 }
 
-.timeline::-webkit-scrollbar {
-    height: 8px;
+.timeline-scroll-wrapper::-webkit-scrollbar {
+    height: 14px;
 }
 
-.timeline::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.1);
-    border-radius: 4px;
+.timeline-scroll-wrapper::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.15);
+    border-radius: 7px;
+    margin: 0 1rem;
 }
 
-.timeline::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
-    border-radius: 4px;
+.timeline-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--primary-color), #9B59B6);
+    border-radius: 7px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-.timeline::-webkit-scrollbar-thumb:hover {
-    background: #357ABD;
+.timeline-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #357ABD, #8E44AD);
+}
+
+/* 添加滚动提示渐变遮罩 */
+.timeline-container {
+    --left-opacity: 0;
+    --right-opacity: 1;
+}
+
+.timeline-container::before,
+.timeline-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 60px;
+    z-index: 10;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.timeline-container::before {
+    left: 0;
+    background: linear-gradient(to right, rgba(74, 144, 226, 0.2), transparent);
+    opacity: var(--left-opacity);
+}
+
+.timeline-container::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(74, 144, 226, 0.2), transparent);
+    opacity: var(--right-opacity);
+}
+
+.timeline {
+    position: relative;
+    padding: 1rem 0;
+    width: max-content;
+    min-width: 100%;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 .timeline-wrapper {
     display: flex;
     flex-direction: row;
-    gap: 2rem;
+    gap: 1.5rem;
     min-width: max-content;
-    padding-bottom: 1rem;
-    justify-content: center;
+    padding: 0 2rem;
     align-items: flex-start;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 .timeline:before {
@@ -634,20 +789,25 @@
 .timeline-item {
     display: flex;
     flex-direction: column;
-    min-width: 280px;
+    width: 320px;
+    min-width: 320px;
     max-width: 320px;
+    max-height: 100%;
     position: relative;
     background: white;
     border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     padding: 0;
     overflow: hidden;
+    flex-shrink: 0;
+    border: 1px solid var(--border-color);
 }
 
 .timeline-item:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
 }
 
 .timeline-year {
@@ -655,38 +815,94 @@
     text-align: center;
     font-weight: bold;
     font-size: 1.1rem;
-    color: white;
-    background: linear-gradient(135deg, var(--primary-color), var(--purple-color));
+    color: #000000;
+    background: linear-gradient(135deg, #4A90E2, #9B59B6);
     padding: 0.75rem 1rem;
     border-radius: 8px 8px 0 0;
     z-index: 1;
+    box-shadow: 0 0 20px rgba(74, 144, 226, 0.5);
 }
 
 .timeline-content {
     flex: 1;
     padding: 1.5rem;
-    background: white;
+    background: transparent;
+    min-height: 200px;
+    max-height: calc(100% - 60px);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.timeline-content h3 {
+    margin: 0 0 1rem 0;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.timeline-main-content,
+.timeline-significance {
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(74, 144, 226, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid #4A90E2;
+    backdrop-filter: blur(5px);
+}
+
+.timeline-significance {
+    border-left-color: #50C878;
+    background: rgba(80, 200, 120, 0.1);
+}
+
+.timeline-main-content p,
+.timeline-significance p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+.timeline-main-content strong,
+.timeline-significance strong {
+    color: var(--primary-color);
+    display: block;
+    margin-bottom: 0.25rem;
 }
 
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 10000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.7);
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
-    background: white;
+    background: rgba(26, 31, 58, 0.95);
+    backdrop-filter: blur(20px);
     margin: 5% auto;
     padding: 2rem;
-    border-radius: 8px;
+    border-radius: 12px;
     width: 80%;
-    max-width: 600px;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
     position: relative;
+    border: 1px solid rgba(74, 144, 226, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 30px rgba(74, 144, 226, 0.2);
+}
+
+.modal-content h2 {
+    color: #4A90E2;
+    text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+    margin-bottom: 1rem;
 }
 
 .close {
@@ -695,47 +911,174 @@
     top: 1rem;
     font-size: 2rem;
     cursor: pointer;
-    color: var(--text-light);
+    color: #000000;
+    transition: all 0.3s;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
 }
 
 .close:hover {
-    color: var(--text-color);
+    color: #000000;
+    background: rgba(74, 144, 226, 0.2);
+}
+
+/* 概念详情模态框样式 */
+.concept-detail-category {
+    margin: 1rem 0;
+}
+
+.concept-detail-category span {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    background: rgba(74, 144, 226, 0.2);
+    color: #4A90E2;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.concept-detail-definition {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid #4A90E2;
+}
+
+.concept-detail-definition p {
+    color: #000000;
+    line-height: 1.8;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.concept-detail-image {
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.concept-detail-image img {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain;
+    display: block;
+}
+
+.concept-detail-video {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(74, 144, 226, 0.3);
+}
+
+.concept-detail-video h3 {
+    color: #4A90E2;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 8px rgba(74, 144, 226, 0.5);
+}
+
+.concept-detail-video .video-item {
+    margin-top: 1rem;
+}
+
+.concept-detail-video .video-item h4 {
+    color: #000000;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.concept-detail-video .video-description {
+    color: #000000;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.concept-detail-examples {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid #50C878;
+}
+
+.concept-detail-examples h3 {
+    color: #50C878;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 8px rgba(80, 200, 120, 0.5);
+}
+
+.concept-detail-examples p {
+    color: #000000;
+    line-height: 1.8;
+    margin: 0;
 }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// 路径内容数据
-const pathContents = {
-    beginner: {
-        title: '"小白"学习路径',
-        items: [
-            'AI 基础概念介绍',
-            '常见 AI 应用场景',
-            '视频教程：AI 入门指南',
-            '实践项目：使用 AI 工具'
-        ]
-    },
-    professional: {
-        title: '"职场人"应用路径',
-        items: [
-            'AI 在工作场景中的应用',
-            'AI 工具使用技巧',
-            '案例学习：行业最佳实践',
-            '提升工作效率的 AI 方法'
-        ]
-    },
-    student: {
-        title: '"学生"进阶路径',
-        items: [
-            '数学基础：线性代数、概率论',
-            '机器学习算法原理',
-            '深度学习框架使用',
-            '算法推导与实践'
-        ]
+// 路径内容数据（从服务器获取）
+const pathContents = {{ learning_paths|tojson|safe }};
+
+// 核心概念数据（从服务器获取）- 合并所有板块的概念
+const conceptData = [
+    {% if text_concepts %}{{ text_concepts|tojson|safe }}{% if image_concepts or video_concepts or knowledge_graph_concepts %},{% endif %}{% endif %}
+    {% if image_concepts %}{{ image_concepts|tojson|safe }}{% if video_concepts or knowledge_graph_concepts %},{% endif %}{% endif %}
+    {% if video_concepts %}{{ video_concepts|tojson|safe }}{% if knowledge_graph_concepts %},{% endif %}{% endif %}
+    {% if knowledge_graph_concepts %}{{ knowledge_graph_concepts|tojson|safe }}{% endif %}
+].flat();
+
+// 更新滚动遮罩显示状态
+function updateScrollIndicators(scrollWrapper) {
+    const container = scrollWrapper.closest('.timeline-container');
+    if (!container) return;
+    
+    const scrollLeft = scrollWrapper.scrollLeft;
+    const scrollWidth = scrollWrapper.scrollWidth;
+    const clientWidth = scrollWrapper.clientWidth;
+    const maxScroll = scrollWidth - clientWidth;
+    
+    // 左侧遮罩：当不在最左边时显示
+    if (scrollLeft > 10) {
+        container.style.setProperty('--left-opacity', '1');
+    } else {
+        container.style.setProperty('--left-opacity', '0');
     }
-};
+    
+    // 右侧遮罩：当不在最右边时显示
+    if (scrollLeft < maxScroll - 10) {
+        container.style.setProperty('--right-opacity', '1');
+    } else {
+        container.style.setProperty('--right-opacity', '0');
+    }
+}
+
+// 初始化发展史滚动监听
+function initHistoryScroll() {
+    const scrollWrapper = document.querySelector('.timeline-scroll-wrapper');
+    if (!scrollWrapper) return;
+    
+    // 初始状态
+    updateScrollIndicators(scrollWrapper);
+    
+    // 监听滚动事件
+    scrollWrapper.addEventListener('scroll', function() {
+        updateScrollIndicators(scrollWrapper);
+    });
+    
+    // 监听窗口大小变化
+    window.addEventListener('resize', function() {
+        updateScrollIndicators(scrollWrapper);
+    });
+}
 
 function switchTab(tabName, buttonElement) {
     // 隐藏所有标签页
@@ -759,9 +1102,14 @@ function switchTab(tabName, buttonElement) {
         buttonElement.classList.add('active');
     }
     
+    // 如果切换到发展史标签页，初始化滚动监听
+    if (tabName === 'history') {
+        setTimeout(initHistoryScroll, 100);
+    }
+    
     // 更新面包屑
     const breadcrumbMap = {
-        'concepts': '三核心概念',
+        'concepts': '核心概念',
         'history': 'AI发展史',
         'paths': '学习路径'
     };
@@ -800,19 +1148,98 @@ function showPath(pathType) {
     }
     
     // 生成路径内容
-    let html = `<h2>${content.title}</h2>`;
-    html += '<ul class="path-items">';
-    content.items.forEach(item => {
-        html += `<li>${item}</li>`;
-    });
-    html += '</ul>';
-    html += `<a href="#" class="btn btn-primary">开始学习</a>`;
+    let html = `<div class="path-header-section">
+        <h2>${content.title}</h2>
+        <p class="path-description">${content.description || ''}</p>
+    </div>`;
+    
+    html += '<div class="path-steps-container">';
+    if (content.steps && content.steps.length > 0) {
+        content.steps.forEach((step, index) => {
+            html += `<div class="path-step-card" onclick="showStepDetail(${step.id}, '${pathType}')">
+                <div class="step-header">
+                    <span class="step-number-badge">${index + 1}</span>
+                    <div class="step-title-info">
+                        <h3>${step.title}</h3>
+                        <div class="step-meta">
+                            <span class="step-type">${step.type || '学习'}</span>
+                            <span class="step-duration">⏱ ${step.duration || ''}</span>
+                            <span class="step-difficulty">难度: ${step.difficulty || ''}</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="step-description">${step.description || ''}</p>
+                <div class="step-resources-preview">
+                    <strong>学习资源：</strong>
+                    <span class="resource-count">${step.resources ? step.resources.length : 0} 个资源</span>
+                </div>
+            </div>`;
+        });
+    }
+    html += '</div>';
     
     pathContentArea.innerHTML = html;
 }
 
+// 显示学习步骤详情
+function showStepDetail(stepId, pathType) {
+    const content = pathContents[pathType];
+    if (!content || !content.steps) return;
+    
+    const step = content.steps.find(s => s.id === stepId);
+    if (!step) return;
+    
+    // 创建详情模态框
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'step-detail-modal';
+    modal.innerHTML = `
+        <div class="modal-content step-detail-modal">
+            <span class="close" onclick="closeStepModal()">&times;</span>
+            <h2>${step.title}</h2>
+            <p class="step-detail-description">${step.description}</p>
+            <div class="step-meta-info">
+                <span>类型: ${step.type}</span>
+                <span>时长: ${step.duration}</span>
+                <span>难度: ${step.difficulty}</span>
+            </div>
+            <div class="step-resources-list">
+                <h3>学习资源</h3>
+                ${step.resources && step.resources.length > 0 ? 
+                    step.resources.map(resource => `
+                        <div class="resource-item">
+                            <div class="resource-info">
+                                <h4>${resource.title}</h4>
+                                <span class="resource-type-badge">${resource.type}</span>
+                            </div>
+                            <a href="${resource.url}" ${resource.url && (resource.url.startsWith('http://') || resource.url.startsWith('https://')) ? 'target="_blank" rel="noopener noreferrer"' : ''} class="btn btn-primary btn-small">查看资源</a>
+                        </div>
+                    `).join('') : 
+                    '<p>暂无学习资源</p>'
+                }
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+function closeStepModal() {
+    const modal = document.getElementById('step-detail-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
 // 初始化显示核心概念（默认标签页）
+// 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
+    // 如果默认显示的是发展史标签页，初始化滚动监听
+    const historyTab = document.getElementById('history-tab');
+    if (historyTab && historyTab.style.display !== 'none') {
+        setTimeout(initHistoryScroll, 100);
+    }
     // 如果当前显示的是学习路径标签页，初始化路径内容
     const pathsTab = document.getElementById('paths-tab');
     if (pathsTab && pathsTab.style.display !== 'none') {
@@ -821,10 +1248,43 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function showConceptDetail(conceptId) {
-    // 这里应该从 API 获取详细信息
-    document.getElementById('concept-modal').style.display = 'block';
-    document.getElementById('concept-detail').innerHTML = '<p>加载中...</p>';
-    // 实际实现中应该调用 API
+    // 从概念数据中获取详细信息
+    const concept = conceptData.find(c => c.id === conceptId);
+    if (!concept) {
+        alert('未找到概念信息');
+        return;
+    }
+    
+    const modal = document.getElementById('concept-modal');
+    const detailDiv = document.getElementById('concept-detail');
+    
+    // 构建详情HTML
+    let html = `<h2>${concept.term}</h2>`;
+    html += `<div class="concept-detail-category"><span>${concept.category}</span></div>`;
+    html += `<div class="concept-detail-definition"><p>${concept.definition}</p></div>`;
+    
+    // 添加视频
+    if (concept.video_url) {
+        html += `<div class="concept-detail-video">
+            <h3>相关视频</h3>
+            <div class="video-item">
+                <h4>${concept.video_title || '相关视频'}</h4>
+                <p class="video-description">${concept.video_description || ''}</p>
+                <a href="${concept.video_url}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">观看视频 →</a>
+            </div>
+        </div>`;
+    }
+    
+    // 添加示例
+    if (concept.examples) {
+        html += `<div class="concept-detail-examples">
+            <h3>示例</h3>
+            <p>${concept.examples}</p>
+        </div>`;
+    }
+    
+    detailDiv.innerHTML = html;
+    modal.style.display = 'flex';
 }
 
 function closeConceptModal() {
@@ -839,23 +1299,176 @@ window.onclick = function(event) {
 }
 </script>
 <style>
-.path-items {
-    list-style: none;
-    padding: 0;
-    margin: 2rem 0;
+.path-header-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid rgba(74, 144, 226, 0.3);
 }
 
-.path-items li {
-    padding: 1rem;
+.path-header-section h2 {
     margin-bottom: 0.5rem;
-    background: #f5f5f5;
-    border-radius: 4px;
-    border-left: 3px solid var(--primary-color);
+    color: #4A90E2;
+    text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+}
+
+.path-description {
+    color: #000000;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.path-steps-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.path-step-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(74, 144, 226, 0.2);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.path-step-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(74, 144, 226, 0.3);
+    border-color: rgba(74, 144, 226, 0.5);
+}
+
+.step-header {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.step-number-badge {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #4A90E2, #9B59B6);
+    color: #000000;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+}
+
+.step-title-info {
+    flex: 1;
+}
+
+.step-title-info h3 {
+    margin: 0 0 0.5rem 0;
+    color: #000000;
+    font-size: 1.1rem;
+}
+
+.step-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: #000000;
+}
+
+.step-type {
+    padding: 0.25rem 0.75rem;
+    background: rgba(74, 144, 226, 0.2);
+    border-radius: 12px;
+    color: #4A90E2;
+}
+
+.step-description {
+    color: #000000;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.step-resources-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #000000;
+}
+
+.resource-count {
+    color: #4A90E2;
+    font-weight: 600;
+}
+
+.step-detail-modal {
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.step-detail-description {
+    color: #000000;
+    line-height: 1.8;
+    margin: 1rem 0;
+}
+
+.step-meta-info {
+    display: flex;
+    gap: 1.5rem;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: rgba(74, 144, 226, 0.1);
+    border-radius: 8px;
+    color: #000000;
+}
+
+.step-resources-list {
+    margin-top: 2rem;
+}
+
+.step-resources-list h3 {
+    color: #4A90E2;
+    margin-bottom: 1rem;
+}
+
+.resource-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.resource-info {
+    flex: 1;
+}
+
+.resource-info h4 {
+    margin: 0 0 0.5rem 0;
+    color: #000000;
+}
+
+.resource-type-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(74, 144, 226, 0.2);
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: #4A90E2;
 }
 
 .path-content-area h2 {
     margin-bottom: 1.5rem;
-    color: var(--primary-color);
+    color: #4A90E2;
+    text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
 }
 </style>
 {% endblock %}

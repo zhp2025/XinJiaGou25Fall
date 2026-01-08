@@ -13,13 +13,17 @@
 
     <!-- 标签按钮 -->
     <div class="resources-tabs">
-        <button class="tab-btn active" onclick="switchTab('glossary', this)">
+        <button class="tab-btn active" onclick="var e = event || window.event; if(e){e.preventDefault(); e.stopPropagation();} window.switchTab('glossary', this); return false;">
             <span class="tab-icon">≡</span>
             <span>AI术语表</span>
         </button>
-        <button class="tab-btn" onclick="switchTab('reading', this)">
+        <button class="tab-btn" onclick="var e = event || window.event; if(e){e.preventDefault(); e.stopPropagation();} window.switchTab('reading', this); return false;">
             <span class="tab-icon">📖</span>
             <span>推荐阅读</span>
+        </button>
+        <button class="tab-btn" onclick="var e = event || window.event; if(e){e.preventDefault(); e.stopPropagation();} window.switchTab('courses', this); return false;">
+            <span class="tab-icon">🎓</span>
+            <span>课程推荐</span>
         </button>
     </div>
 
@@ -28,33 +32,57 @@
         <div class="content-layout">
             <div class="sidebar-left">
                 <h3 class="sidebar-title">术语列表</h3>
-                <ul class="sidebar-list">
-                    {% for term in terms[:10] %}
-                    <li class="sidebar-item {% if loop.first %}active{% endif %}">
-                        <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="showTerm({{ term.id }}); return false;">{{ term.term }}</a>
-                    </li>
+                <div class="terms-horizontal-list" id="terms-horizontal-list">
+                    {% for term in terms[:3] %}
+                    <span class="term-tag" data-term-id="{{ term.id }}" onclick="var e = event || window.event; if(e){e.preventDefault(); e.stopPropagation();} window.showTermFromTag({{ term.id }}, e); return false;" style="cursor: pointer;">{{ term.term }}</span>
                     {% endfor %}
-                </ul>
-            </div>
-            <div class="content-main">
-                <div class="terms-content">
-                    {% for term in terms[:5] %}
-                    <div class="term-card">
-                        <h3>{{ term.term }}</h3>
-                        <p class="term-definition">{{ term.definition }}</p>
-                        {% if term.category %}
-                        <span class="term-category">{{ term.category }}</span>
-                        {% endif %}
-                    </div>
+                    {% if terms|length > 3 %}
+                    <span class="term-tag term-more" onclick="var e = event || window.event; if(e){e.preventDefault(); e.stopPropagation();} showAllTerms(); return false;" style="cursor: pointer;">更多</span>
+                    {% endif %}
+                </div>
+                <div class="terms-all-list" id="terms-all-list" style="display: none;">
+                    {% for term in terms %}
+                    <span class="term-tag" data-term-id="{{ term.id }}" onclick="var e = event || window.event; if(e){e.preventDefault(); e.stopPropagation();} window.showTermFromTag({{ term.id }}, e); return false;" style="cursor: pointer;">{{ term.term }}</span>
                     {% endfor %}
                 </div>
-                <!-- 分页 -->
-                <div class="pagination">
-                    <span class="page-number active">1</span>
-                    <span class="page-number">2</span>
-                    <span class="page-number">3</span>
-                    <span class="page-ellipsis">...</span>
+            </div>
+            <div class="content-main">
+                <!-- 搜索框 -->
+                <div class="glossary-search">
+                    <input type="text" id="term-search" placeholder="搜索术语（支持中英文搜索）..." onkeyup="searchTerms()">
+                </div>
+                
+                <!-- 26字母筛选 -->
+                <div class="alphabet-filter">
+                    <span class="alphabet-label">快速筛选：</span>
+                    <div class="alphabet-grid">
+                        {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
+                        <a href="#" class="alphabet-link" onclick="var e = event || window.event; if(e){e.preventDefault();} filterByLetter('{{ letter }}', e); return false;">{{ letter }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="terms-content" id="terms-content-area">
+                    {% if terms %}
+                        {% for term in terms %}
+                        <div class="term-card" data-term="{{ term.term }}" data-term-id="{{ term.id }}">
+                            <h3>{{ term.term }}</h3>
+                            <p class="term-definition">{{ term.definition }}</p>
+                            {% if term.category %}
+                            <span class="term-category">{{ term.category }}</span>
+                            {% endif %}
+                            {% if term.examples %}
+                            <div class="term-examples">
+                                <strong>示例：</strong>{{ term.examples }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="no-terms">
+                            <p>暂无术语数据</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -68,43 +96,55 @@
                 <ul class="sidebar-list">
                     <li class="sidebar-item">
                         <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="filterResources('全部'); return false;">全部</a>
+                        <a href="#" onclick="var e = event || window.event; if(e){e.preventDefault();} filterResources('全部', e); return false;">全部</a>
                     </li>
                     <li class="sidebar-item">
                         <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="filterResources('书籍'); return false;">书籍</a>
+                        <a href="#" onclick="var e = event || window.event; if(e){e.preventDefault();} filterResources('书籍', e); return false;">书籍</a>
                     </li>
                     <li class="sidebar-item">
                         <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="filterResources('论文'); return false;">论文</a>
+                        <a href="#" onclick="var e = event || window.event; if(e){e.preventDefault();} filterResources('论文', e); return false;">论文</a>
                     </li>
                     <li class="sidebar-item">
                         <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="filterResources('期刊'); return false;">期刊</a>
+                        <a href="#" onclick="var e = event || window.event; if(e){e.preventDefault();} filterResources('期刊', e); return false;">期刊</a>
                     </li>
                     <li class="sidebar-item">
                         <span class="sidebar-arrow">▶</span>
-                        <a href="#" onclick="filterResources('课程'); return false;">课程</a>
+                        <a href="#" onclick="var e = event || window.event; if(e){e.preventDefault();} filterResources('课程', e); return false;">课程</a>
                     </li>
                 </ul>
             </div>
             <div class="content-main">
-                <div class="resources-list">
-                    {% for resource in resources %}
+                <div class="resources-grid">
+                    {% for resource in resources.items %}
                     <div class="resource-card card-animate hover-lift" data-type="{{ resource.type }}">
                         {% if resource.cover_image %}
                         <img src="{{ resource.cover_image }}" alt="{{ resource.title }}" class="resource-cover">
                         {% endif %}
                         <div class="resource-content">
-                            <h3>{{ resource.title }}</h3>
+                            <h3>
+                                {% if resource.url and resource.url != '#' and (resource.url.startswith('http://') or resource.url.startswith('https://')) %}
+                                <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); event.preventDefault(); window.open('{{ resource.url }}', '_blank'); return false;">{{ resource.title }}</a>
+                                {% elif resource.url and resource.url != '#' %}
+                                <a href="{{ resource.url }}" onclick="event.stopPropagation(); window.location.href='{{ resource.url }}'; return false;">{{ resource.title }}</a>
+                                {% else %}
+                                {{ resource.title }}
+                                {% endif %}
+                            </h3>
                             {% if resource.author %}
                             <p class="resource-author">作者：{{ resource.author }}</p>
                             {% endif %}
                             <p class="resource-description">{{ resource.description[:150] }}...</p>
                             <div class="resource-footer">
                                 <span class="resource-type">{{ resource.type }}</span>
-                                {% if resource.url %}
-                                <a href="{{ resource.url }}" target="_blank" class="btn btn-primary btn-small">查看</a>
+                                {% if resource.url and resource.url != '#' %}
+                                    {% if resource.url.startswith('http://') or resource.url.startswith('https://') %}
+                                    <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-small" onclick="event.stopPropagation(); event.preventDefault(); window.open('{{ resource.url }}', '_blank'); return false;">查看</a>
+                                    {% else %}
+                                    <a href="{{ resource.url }}" class="btn btn-primary btn-small" onclick="event.stopPropagation(); window.location.href='{{ resource.url }}'; return false;">查看</a>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -112,16 +152,91 @@
                     {% endfor %}
                 </div>
                 <!-- 分页 -->
+                {% if resources.pages > 1 %}
                 <div class="pagination">
-                    <span class="page-number active">1</span>
-                    <span class="page-number">2</span>
-                    <span class="page-number">3</span>
-                    <span class="page-ellipsis">...</span>
+                    {% if resources.has_prev %}
+                    <a href="{{ url_for('main.resources', page=resources.prev_num) }}" class="page-link">上一页</a>
+                    {% endif %}
+                    
+                    {% for page_num in resources.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == resources.page %}
+                            <span class="page-link active">{{ page_num }}</span>
+                            {% else %}
+                            <a href="{{ url_for('main.resources', page=page_num) }}" class="page-link">{{ page_num }}</a>
+                            {% endif %}
+                        {% else %}
+                            <span class="page-link">...</span>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if resources.has_next %}
+                    <a href="{{ url_for('main.resources', page=resources.next_num) }}" class="page-link">下一页</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 课程推荐 -->
+    <div id="courses-tab" class="tab-content">
+        <div class="content-layout">
+            <div class="sidebar-left">
+                <h3 class="sidebar-title">讲师筛选</h3>
+                <ul class="sidebar-list">
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="var e = event || window.event; if(e){e.preventDefault();} filterCourses('全部', e); return false;">全部</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="var e = event || window.event; if(e){e.preventDefault();} filterCourses('吴恩达', e); return false;">吴恩达</a>
+                    </li>
+                    <li class="sidebar-item">
+                        <span class="sidebar-arrow">▶</span>
+                        <a href="#" onclick="var e = event || window.event; if(e){e.preventDefault();} filterCourses('何凯明', e); return false;">何凯明</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="content-main">
+                <div class="resources-grid">
+                    {% for course in courses %}
+                    <div class="resource-card card-animate hover-lift" data-author="{{ course.author }}">
+                        {% if course.cover_image %}
+                        <img src="{{ course.cover_image }}" alt="{{ course.title }}" class="resource-cover">
+                        {% endif %}
+                        <div class="resource-content">
+                            <h3>
+                                {% if course.url and course.url != '#' and (course.url.startswith('http://') or course.url.startswith('https://')) %}
+                                <a href="{{ course.url }}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); event.preventDefault(); window.open('{{ course.url }}', '_blank'); return false;">{{ course.title }}</a>
+                                {% elif course.url and course.url != '#' %}
+                                <a href="{{ course.url }}" onclick="event.stopPropagation(); window.location.href='{{ course.url }}'; return false;">{{ course.title }}</a>
+                                {% else %}
+                                {{ course.title }}
+                                {% endif %}
+                            </h3>
+                            {% if course.author %}
+                            <p class="resource-author">讲师：{{ course.author }}</p>
+                            {% endif %}
+                            <p class="resource-description">{{ course.description[:150] }}...</p>
+                            <div class="resource-footer">
+                                <span class="resource-type">{{ course.type }}</span>
+                                {% if course.url and course.url != '#' %}
+                                    {% if course.url.startswith('http://') or course.url.startswith('https://') %}
+                                    <a href="{{ course.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-small" onclick="event.stopPropagation(); event.preventDefault(); window.open('{{ course.url }}', '_blank'); return false;">查看</a>
+                                    {% else %}
+                                    <a href="{{ course.url }}" class="btn btn-primary btn-small" onclick="event.stopPropagation(); window.location.href='{{ course.url }}'; return false;">查看</a>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block extra_css %}
@@ -142,10 +257,13 @@
     border: 1px solid var(--border-color);
     border-bottom: none;
     border-radius: 8px 8px 0 0;
-    cursor: pointer;
+    cursor: pointer !important;
     font-size: 1rem;
     transition: all 0.3s;
     color: var(--text-color);
+    pointer-events: auto !important;
+    z-index: 10;
+    position: relative;
 }
 
 .tab-btn:hover {
@@ -165,6 +283,54 @@
     font-size: 1.2rem;
 }
 
+.terms-horizontal-list, .terms-all-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.term-tag {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: rgba(74, 144, 226, 0.1);
+    color: var(--text-color);
+    border: 1px solid rgba(74, 144, 226, 0.3);
+    border-radius: 20px;
+    cursor: pointer !important;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    pointer-events: auto !important;
+    user-select: none;
+    z-index: 10;
+    position: relative;
+}
+
+.term-tag:hover {
+    background: rgba(74, 144, 226, 0.2);
+    border-color: rgba(74, 144, 226, 0.5);
+    transform: translateY(-2px);
+}
+
+.term-tag.active {
+    background: rgba(74, 144, 226, 0.3);
+    border-color: #4A90E2;
+    color: #4A90E2;
+    box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+}
+
+.term-more {
+    background: rgba(80, 200, 120, 0.1);
+    border-color: rgba(80, 200, 120, 0.3);
+    font-weight: 600;
+}
+
+.term-more:hover {
+    background: rgba(80, 200, 120, 0.2);
+    border-color: rgba(80, 200, 120, 0.5);
+}
+
 .terms-content {
     display: flex;
     flex-direction: column;
@@ -177,6 +343,20 @@
     padding: 1.5rem;
     border-radius: 8px;
     box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.term-card.highlighted {
+    border-color: #4A90E2;
+    box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
+    transform: translateY(-2px);
+}
+
+.no-terms {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
 }
 
 .resources-list {
@@ -200,21 +380,51 @@
 
 .glossary-search input {
     width: 100%;
-    max-width: 500px;
-    padding: 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
+    max-width: 600px;
+    padding: 1rem 1.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
     font-size: 1rem;
+    transition: border-color 0.3s;
 }
 
-.alphabet-nav {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+.glossary-search input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.alphabet-filter {
     margin: 2rem 0;
     padding: 1rem;
     background: var(--light-color);
     border-radius: 8px;
+}
+
+.alphabet-grid {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .alphabet-grid {
+        grid-template-columns: repeat(13, 1fr);
+        gap: 0.25rem;
+    }
+    
+    .alphabet-link {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+    }
+}
+
+.alphabet-label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-right: 0.5rem;
 }
 
 .alphabet-link {
@@ -228,7 +438,13 @@
 
 .alphabet-link:hover {
     background: var(--primary-color);
-    color: white;
+    color: #000000;
+}
+
+.alphabet-link.active {
+    background: var(--primary-color);
+    color: #000000;
+    font-weight: 600;
 }
 
 .terms-list {
@@ -261,7 +477,7 @@
     display: inline-block;
     padding: 0.25rem 0.75rem;
     background: var(--primary-color);
-    color: white;
+    color: #000000;
     border-radius: 12px;
     font-size: 0.8rem;
     margin-top: 0.5rem;
@@ -294,6 +510,30 @@
     overflow: hidden;
     box-shadow: var(--shadow);
     transition: transform 0.3s;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.resource-card a {
+    text-decoration: none;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    z-index: 10;
+    position: relative;
+}
+
+.resource-card h3 a {
+    color: var(--text-color);
+}
+
+.resource-card h3 a:hover {
+    color: var(--primary-color);
+}
+
+.resource-card .btn {
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .resource-card:hover {
@@ -336,26 +576,70 @@
     border-radius: 12px;
     font-size: 0.8rem;
 }
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin: 2rem 0;
+    align-items: center;
+}
+
+.page-link {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--text-color);
+    transition: all 0.3s;
+}
+
+.page-link:hover {
+    background: var(--primary-color);
+    color: #000000;
+    border-color: var(--primary-color);
+}
+
+.page-link.active {
+    background: var(--primary-color);
+    color: #000000;
+    border-color: var(--primary-color);
+    cursor: default;
+}
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function switchTab(tabName, buttonElement) {
+// 确保所有函数在全局作用域
+window.switchTab = function(tabName, buttonElement) {
+    var e = window.event || (typeof event !== 'undefined' ? event : null);
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // 隐藏所有标签页内容
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
         tab.style.display = 'none';
     });
+    
+    // 移除所有按钮的激活状态
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     
+    // 显示选中的标签页
     const tabElement = document.getElementById(tabName + '-tab');
     if (tabElement) {
         tabElement.classList.add('active');
         tabElement.style.display = 'block';
+    } else {
+        console.error('Tab element not found:', tabName + '-tab');
     }
     
+    // 激活选中的按钮
     if (buttonElement) {
         buttonElement.classList.add('active');
     }
@@ -363,52 +647,347 @@ function switchTab(tabName, buttonElement) {
     // 更新面包屑
     const breadcrumbMap = {
         'glossary': 'AI术语表',
-        'reading': '推荐阅读'
+        'reading': '推荐阅读',
+        'courses': '课程推荐'
     };
     const currentBreadcrumb = document.getElementById('breadcrumb-current');
     if (currentBreadcrumb && breadcrumbMap[tabName]) {
         currentBreadcrumb.textContent = breadcrumbMap[tabName];
     }
-}
-
-function showTerm(termId) {
-    // 更新侧边栏激活状态
-    document.querySelectorAll('.sidebar-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    event.target.closest('.sidebar-item').classList.add('active');
-    // 这里可以加载对应的术语内容
-}
-
-function searchTerms() {
-    const query = document.getElementById('term-search').value.toLowerCase();
-    const terms = document.querySelectorAll('.term-item');
     
-    terms.forEach(term => {
-        const termText = term.dataset.term;
-        if (termText.includes(query)) {
-            term.style.display = 'block';
+    // 如果切换到术语表，确保所有术语都显示
+    if (tabName === 'glossary') {
+        const termCards = document.querySelectorAll('.term-card');
+        termCards.forEach(card => {
+            card.style.display = 'block';
+            card.classList.remove('highlighted');
+        });
+        // 清除搜索框
+        const searchInput = document.getElementById('term-search');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+        // 清除字母筛选激活状态
+        document.querySelectorAll('.alphabet-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        // 显示所有术语标签
+        const termTags = document.querySelectorAll('.term-tag[data-term-id]');
+        termTags.forEach(tag => {
+            tag.style.display = 'inline-block';
+        });
+    }
+}
+
+window.showTermFromTag = function(termId, evt) {
+    var e = evt || window.event || (typeof event !== 'undefined' ? event : null);
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // 更新标签激活状态
+    document.querySelectorAll('.term-tag').forEach(tag => {
+        tag.classList.remove('active');
+        if (parseInt(tag.dataset.termId) === termId) {
+            tag.classList.add('active');
+        }
+    });
+    
+    // 显示所有术语卡片
+    const termCards = document.querySelectorAll('.term-card');
+    termCards.forEach(card => {
+        card.style.display = 'block';
+    });
+    
+    // 找到对应的术语卡片并高亮
+    termCards.forEach(card => {
+        const cardTermId = parseInt(card.dataset.termId);
+        if (cardTermId === termId) {
+            // 添加高亮效果
+            card.classList.add('highlighted');
+            // 滚动到该卡片
+            setTimeout(() => {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
         } else {
-            term.style.display = 'none';
+            // 移除高亮
+            card.classList.remove('highlighted');
         }
     });
 }
 
-function filterResources(type) {
-    const cards = document.querySelectorAll('.resource-card');
-    const buttons = document.querySelectorAll('#reading-tab .filter-btn');
+window.showAllTerms = function() {
+    const horizontalList = document.getElementById('terms-horizontal-list');
+    const allList = document.getElementById('terms-all-list');
+    if (horizontalList && allList) {
+        horizontalList.style.display = 'none';
+        allList.style.display = 'flex';
+    }
+}
+
+window.showTerm = function(termId) {
+    window.showTermFromTag(termId);
+}
+
+window.filterByLetter = function(letter, evt) {
+    var e = evt || window.event || (typeof event !== 'undefined' ? event : null);
+    const termCards = document.querySelectorAll('.term-card');
+    const alphabetLinks = document.querySelectorAll('.alphabet-link');
     
-    buttons.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    // 更新字母链接激活状态
+    alphabetLinks.forEach(link => {
+        link.classList.remove('active');
+    });
+    if (e && e.target) {
+        e.target.classList.add('active');
+    }
     
-    cards.forEach(card => {
-        if (type === 'all' || card.dataset.type === type) {
+    // 筛选术语
+    termCards.forEach(card => {
+        const term = card.dataset.term || '';
+        // 检查英文首字母或中文拼音首字母
+        const firstChar = term.charAt(0).toUpperCase();
+        const pinyinFirstChar = window.getPinyinFirstChar(term);
+        
+        if (firstChar === letter || pinyinFirstChar === letter) {
             card.style.display = 'block';
+            card.classList.remove('highlighted');
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // 更新侧边栏显示
+    window.updateSidebarByLetter(letter);
+}
+
+window.getPinyinFirstChar = function(chinese) {
+    // 简单的拼音首字母映射（常用字）
+    const pinyinMap = {
+        'A': ['AI', 'AN', 'AO'],
+        'B': ['BA', 'BEI', 'BI', 'BO', 'BU'],
+        'C': ['CA', 'CE', 'CHA', 'CHAI', 'CHAN', 'CHANG', 'CHAO', 'CHE', 'CHEN', 'CHENG', 'CHI', 'CHONG', 'CHOU', 'CHU', 'CHUAI', 'CHUAN', 'CHUANG', 'CHUI', 'CHUN', 'CHUO', 'CI', 'CONG', 'COU', 'CU', 'CUAN', 'CUI', 'CUN', 'CUO'],
+        'D': ['DA', 'DAI', 'DAN', 'DANG', 'DAO', 'DE', 'DENG', 'DI', 'DIAN', 'DIAO', 'DIE', 'DING', 'DIU', 'DONG', 'DOU', 'DU', 'DUAN', 'DUI', 'DUN', 'DUO'],
+        'E': ['E', 'EN', 'ER'],
+        'F': ['FA', 'FAN', 'FANG', 'FEI', 'FEN', 'FENG', 'FO', 'FOU', 'FU'],
+        'G': ['GA', 'GAI', 'GAN', 'GANG', 'GAO', 'GE', 'GEI', 'GEN', 'GENG', 'GONG', 'GOU', 'GU', 'GUA', 'GUAI', 'GUAN', 'GUANG', 'GUI', 'GUN', 'GUO'],
+        'H': ['HA', 'HAI', 'HAN', 'HANG', 'HAO', 'HE', 'HEI', 'HEN', 'HENG', 'HONG', 'HOU', 'HU', 'HUA', 'HUAI', 'HUAN', 'HUANG', 'HUI', 'HUN', 'HUO'],
+        'J': ['JI', 'JIA', 'JIAN', 'JIANG', 'JIAO', 'JIE', 'JIN', 'JING', 'JIONG', 'JIU', 'JU', 'JUAN', 'JUE', 'JUN'],
+        'K': ['KA', 'KAI', 'KAN', 'KANG', 'KAO', 'KE', 'KEN', 'KENG', 'KONG', 'KOU', 'KU', 'KUA', 'KUAI', 'KUAN', 'KUANG', 'KUI', 'KUN', 'KUO'],
+        'L': ['LA', 'LAI', 'LAN', 'LANG', 'LAO', 'LE', 'LEI', 'LENG', 'LI', 'LIA', 'LIAN', 'LIANG', 'LIAO', 'LIE', 'LIN', 'LING', 'LIU', 'LONG', 'LOU', 'LU', 'LV', 'LUAN', 'LUE', 'LUN', 'LUO'],
+        'M': ['MA', 'MAI', 'MAN', 'MANG', 'MAO', 'ME', 'MEI', 'MEN', 'MENG', 'MI', 'MIAN', 'MIAO', 'MIE', 'MIN', 'MING', 'MIU', 'MO', 'MOU', 'MU'],
+        'N': ['NA', 'NAI', 'NAN', 'NANG', 'NAO', 'NE', 'NEI', 'NEN', 'NENG', 'NI', 'NIAN', 'NIANG', 'NIAO', 'NIE', 'NIN', 'NING', 'NIU', 'NONG', 'NOU', 'NU', 'NV', 'NUAN', 'NUE', 'NUO'],
+        'O': ['O', 'OU'],
+        'P': ['PA', 'PAI', 'PAN', 'PANG', 'PAO', 'PEI', 'PEN', 'PENG', 'PI', 'PIAN', 'PIAO', 'PIE', 'PIN', 'PING', 'PO', 'POU', 'PU'],
+        'Q': ['QI', 'QIA', 'QIAN', 'QIANG', 'QIAO', 'QIE', 'QIN', 'QING', 'QIONG', 'QIU', 'QU', 'QUAN', 'QUE', 'QUN'],
+        'R': ['RAN', 'RANG', 'RAO', 'RE', 'REN', 'RENG', 'RI', 'RONG', 'ROU', 'RU', 'RUAN', 'RUI', 'RUN', 'RUO'],
+        'S': ['SA', 'SAI', 'SAN', 'SANG', 'SAO', 'SE', 'SEN', 'SENG', 'SHA', 'SHAI', 'SHAN', 'SHANG', 'SHAO', 'SHE', 'SHEN', 'SHENG', 'SHI', 'SHOU', 'SHU', 'SHUA', 'SHUAI', 'SHUAN', 'SHUANG', 'SHUI', 'SHUN', 'SHUO', 'SI', 'SONG', 'SOU', 'SU', 'SUAN', 'SUI', 'SUN', 'SUO'],
+        'T': ['TA', 'TAI', 'TAN', 'TANG', 'TAO', 'TE', 'TENG', 'TI', 'TIAN', 'TIAO', 'TIE', 'TING', 'TONG', 'TOU', 'TU', 'TUAN', 'TUI', 'TUN', 'TUO'],
+        'W': ['WA', 'WAI', 'WAN', 'WANG', 'WEI', 'WEN', 'WENG', 'WO', 'WU'],
+        'X': ['XI', 'XIA', 'XIAN', 'XIANG', 'XIAO', 'XIE', 'XIN', 'XING', 'XIONG', 'XIU', 'XU', 'XUAN', 'XUE', 'XUN'],
+        'Y': ['YA', 'YAN', 'YANG', 'YAO', 'YE', 'YI', 'YIN', 'YING', 'YO', 'YONG', 'YOU', 'YU', 'YUAN', 'YUE', 'YUN'],
+        'Z': ['ZA', 'ZAI', 'ZAN', 'ZANG', 'ZAO', 'ZE', 'ZEI', 'ZEN', 'ZENG', 'ZHA', 'ZHAI', 'ZHAN', 'ZHANG', 'ZHAO', 'ZHE', 'ZHEN', 'ZHENG', 'ZHI', 'ZHONG', 'ZHOU', 'ZHU', 'ZHUA', 'ZHUAI', 'ZHUAN', 'ZHUANG', 'ZHUI', 'ZHUN', 'ZHUO', 'ZI', 'ZONG', 'ZOU', 'ZU', 'ZUAN', 'ZUI', 'ZUN', 'ZUO']
+    };
+    
+    // 检查是否是中文字符
+    if (/[\u4e00-\u9fa5]/.test(chinese)) {
+        const firstChar = chinese.charAt(0);
+        // 这里使用简化的拼音首字母判断
+        // 实际应用中应该使用完整的拼音库
+        for (let letter in pinyinMap) {
+            // 简化处理：根据常用字的拼音首字母
+            // 实际应该使用专业的拼音转换库
+        }
+        // 临时方案：返回第一个字符的Unicode范围对应的字母
+        const code = firstChar.charCodeAt(0);
+        if (code >= 0x4e00 && code <= 0x9fa5) {
+            // 使用简化的拼音首字母映射
+            const pinyinFirst = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'W', 'X', 'Y', 'Z'];
+            // 根据Unicode范围大致映射
+            return pinyinFirst[Math.floor((code - 0x4e00) / 1000) % 23];
+        }
+    }
+    
+    // 如果是英文字母，直接返回大写
+    return chinese.charAt(0).toUpperCase();
+}
+
+window.updateSidebarByLetter = function(letter) {
+    const termTags = document.querySelectorAll('.term-tag[data-term-id]');
+    termTags.forEach(tag => {
+        const termText = tag.textContent.trim();
+        const firstChar = termText.charAt(0).toUpperCase();
+        const pinyinFirstChar = window.getPinyinFirstChar(termText);
+        
+        if (firstChar === letter || pinyinFirstChar === letter) {
+            tag.style.display = 'inline-block';
+        } else {
+            tag.style.display = 'none';
+        }
+    });
+}
+
+window.searchTerms = function() {
+    const query = document.getElementById('term-search').value.trim().toLowerCase();
+    const termCards = document.querySelectorAll('.term-card');
+    const termTags = document.querySelectorAll('.term-tag[data-term-id]');
+    
+    if (!query) {
+        // 如果搜索框为空，显示所有术语
+        termCards.forEach(card => {
+            card.style.display = 'block';
+        });
+        termTags.forEach(tag => {
+            tag.style.display = 'inline-block';
+        });
+        return;
+    }
+    
+    // 搜索术语
+    let hasResults = false;
+    termCards.forEach(card => {
+        const term = card.dataset.term || '';
+        const definition = card.querySelector('.term-definition')?.textContent || '';
+        const category = card.querySelector('.term-category')?.textContent || '';
+        const examples = card.querySelector('.term-examples')?.textContent || '';
+        
+        // 在术语、定义、分类、示例中搜索
+        const searchText = (term + ' ' + definition + ' ' + category + ' ' + examples).toLowerCase();
+        
+        if (searchText.includes(query)) {
+            card.style.display = 'block';
+            hasResults = true;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // 更新术语标签显示（使用之前声明的termTags变量）
+    termTags.forEach(tag => {
+        const termId = tag.dataset.termId;
+        const correspondingCard = document.querySelector(`.term-card[data-term-id="${termId}"]`);
+        if (correspondingCard && correspondingCard.style.display !== 'none') {
+            tag.style.display = 'inline-block';
+        } else {
+            tag.style.display = 'none';
+        }
+    });
+    
+    // 如果没有搜索结果，显示提示
+    const contentArea = document.getElementById('terms-content-area');
+    let noResultsMsg = contentArea.querySelector('.no-results-msg');
+    if (!hasResults && query) {
+        if (!noResultsMsg) {
+            noResultsMsg = document.createElement('div');
+            noResultsMsg.className = 'no-results-msg';
+            noResultsMsg.style.cssText = 'padding: 2rem; text-align: center; color: var(--text-light);';
+            noResultsMsg.innerHTML = '<p>未找到匹配的术语，请尝试其他关键词</p>';
+            contentArea.appendChild(noResultsMsg);
+        }
+        noResultsMsg.style.display = 'block';
+    } else if (noResultsMsg) {
+        noResultsMsg.style.display = 'none';
+    }
+}
+
+window.filterResources = function(type, evt) {
+    var e = evt || window.event || (typeof event !== 'undefined' ? event : null);
+    const cards = document.querySelectorAll('#reading-tab .resource-card');
+    const sidebarItems = document.querySelectorAll('#reading-tab .sidebar-item');
+    
+    // 更新侧边栏激活状态
+    sidebarItems.forEach(item => {
+        item.classList.remove('active');
+    });
+    if (e && e.target) {
+        const sidebarItem = e.target.closest('.sidebar-item');
+        if (sidebarItem) {
+            sidebarItem.classList.add('active');
+        }
+    }
+    
+    // 筛选卡片
+    cards.forEach(card => {
+        if (type === '全部' || type === 'all' || card.dataset.type === type) {
+            card.style.display = 'flex';
         } else {
             card.style.display = 'none';
         }
     });
 }
+
+window.filterCourses = function(author, evt) {
+    var e = evt || window.event || (typeof event !== 'undefined' ? event : null);
+    const cards = document.querySelectorAll('#courses-tab .resource-card');
+    const sidebarItems = document.querySelectorAll('#courses-tab .sidebar-item');
+    
+    // 更新侧边栏激活状态
+    sidebarItems.forEach(item => {
+        item.classList.remove('active');
+    });
+    if (e && e.target) {
+        const sidebarItem = e.target.closest('.sidebar-item');
+        if (sidebarItem) {
+            sidebarItem.classList.add('active');
+        }
+    }
+    
+    // 筛选卡片
+    cards.forEach(card => {
+        if (author === '全部' || author === 'all' || card.dataset.author === author) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // 如果没有卡片显示，显示提示
+    const visibleCards = Array.from(cards).filter(card => card.style.display !== 'none');
+    const gridContainer = document.querySelector('#courses-tab .resources-grid');
+    if (gridContainer) {
+        let noResultsMsg = gridContainer.querySelector('.no-results-msg');
+        if (visibleCards.length === 0) {
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.className = 'no-results-msg';
+                noResultsMsg.style.cssText = 'grid-column: 1 / -1; padding: 3rem; text-align: center; color: var(--text-light);';
+                noResultsMsg.innerHTML = '<p>暂无该讲师的课程</p>';
+                gridContainer.appendChild(noResultsMsg);
+            }
+            noResultsMsg.style.display = 'block';
+        } else if (noResultsMsg) {
+            noResultsMsg.style.display = 'none';
+        }
+    }
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 确保术语表标签页正确显示所有术语
+    const glossaryTab = document.getElementById('glossary-tab');
+    if (glossaryTab && glossaryTab.classList.contains('active')) {
+        const termCards = document.querySelectorAll('.term-card');
+        termCards.forEach(card => {
+            card.style.display = 'block';
+        });
+    }
+    
+    // 确保所有术语标签都可以点击
+    const termTags = document.querySelectorAll('.term-tag[data-term-id]');
+    termTags.forEach(tag => {
+        tag.style.cursor = 'pointer';
+        // 确保点击事件绑定（如果内联onclick不存在）
+        const termId = parseInt(tag.dataset.termId);
+        if (termId && !tag.getAttribute('onclick')) {
+            tag.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.showTermFromTag(termId, e);
+            });
+        }
+    });
+});
 </script>
 {% endblock %}
 
